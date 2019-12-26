@@ -5,8 +5,8 @@
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
-// @updateURL
-// @downloadURL
+// @updateURL    https://raw.githubusercontent.com/whosphp/xiuxianfudi/master/xx.js
+// @downloadURL  https://raw.githubusercontent.com/whosphp/xiuxianfudi/master/xx.js
 // @grant        GM_xmlhttpRequest
 // @grant        unsafeWindow
 // @require      https://cdn.jsdelivr.net/npm/sweetalert2@9
