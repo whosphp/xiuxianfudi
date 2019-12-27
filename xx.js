@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -15,6 +15,45 @@
 
 (function() {
     'use strict';
+
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    let old = scoketConntionTeam;
+    let connectFlag = true;
+    scoketConntionTeam = function () {
+        if (connectFlag) {
+            connectFlag = false
+        } else {
+            return
+        }
+
+        let interval = setInterval(function () {
+            if (socket === undefined || ! socket) {
+                old()
+            } else if (socket.connected) {
+                socket.off('disconnect')
+                socket.on('disconnect', function() {
+                    console.warn('disconnect')
+                    who_notify('disconnect')
+                })
+
+                socket.on("team",function(res) {
+                    let type = res.type
+                    switch (type) {
+                        case "currentTeamDisband":
+                            who_notify('队伍解散')
+                            break;
+                    }
+                })
+
+                clearInterval(interval)
+            }
+        }, 1000)
+
+        console.debug('scoketConntionTeam called')
+    }
 
     $('.container-fluid > .homediv > div:first-child').append(`
 <div id="who_helper">
@@ -138,41 +177,9 @@
         }
     })
 
-    // 检查 socket, 找不到则重复检查 x 次
-    var maxTry = 0;
-    var checkSocketInterval = setInterval(function() {
-        if (typeof(socket) === "undefined") {
-            console.warn('try to find socket')
-
-            $('#fishfarm').click()
-            $('#fish-game-btn-c').click()
-
-            if (maxTry > 10) {
-                clearInterval(checkSocketInterval)
-                console.warn('socket can not find')
-            }
-        } else {
-            who_log_success('find socket')
-            // 去除默认的断线事件(会阻塞进程 导致自定义的断线事件不执行)
-            socket.off('disconnect')
-            socket.on('disconnect', function() {
-                console.warn('disconnect')
-                who_notify('disconnect')
-            })
-
-            socket.on("team",function(res) {
-                let type = res.type
-                switch (type) {
-                    case "currentTeamDisband":
-                        who_notify('队伍解散')
-                        break;
-                }
-            })
-
-            clearInterval(checkSocketInterval)
-        }
-        maxTry++
-    }, 1000)
+    // 进入组队大厅
+    $('#fishfarm').click()
+    $('#fish-game-btn-c').click()
 
     // 定时更新用户信息
     setInterval(function() { getUserInfoFunc() }, 300000)
