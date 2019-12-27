@@ -120,7 +120,7 @@
 <form class="form-inline">
     <div class="form-group">
         <label>FB</label>
-        <select class="form-control">
+        <select class="form-control" v-model="fb">
             <option v-for="option in fbOptions">{{ option.name }}</option>
         </select>
     </div>
