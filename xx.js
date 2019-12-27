@@ -42,6 +42,11 @@
                 socket.on("team",function(res) {
                     let type = res.type
                     switch (type) {
+                        case "msg":
+                            if (res.msg.includes('已达上限')) {
+                                who_notify(res.msg)
+                            }
+                            break;
                         case "currentTeamDisband":
                             who_notify('队伍解散')
                             break;
@@ -57,6 +62,25 @@
 
     $('.container-fluid > .homediv > div:first-child').append(`
 <div id="who_helper">
+<form class="form-horizontal">
+    <div class="form-group">
+        <label class="col-sm-4 control-label">名称</label>
+        <div class="col-sm-8">
+            <input class="form-control" v-model="form.goodsName" type="text">
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="col-sm-4 control-label">数量</label>
+        <div class="col-sm-8">
+            <input class="form-control" v-model="form.goodsNum" type="number">
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-sm-offset-4 col-sm-8">
+            <button class="btn btn-success btn-sm" type="button" @click="addNewSub">新建</button>
+        </div>
+    </div>
+</form>
 <table class="table table-condensed">
     <tr v-for="sub in subscribes">
         <td><input type="checkbox" :checked="sub.checked" @click="sub.checked = ! sub.checked"></td>
@@ -70,9 +94,14 @@
     unsafeWindow.who_app = new Vue({
         'el': '#who_helper',
         data: {
+            userGoodsPages: 1,// 背包物品总页数
             who_userBaseInfo: {
                 'max-vitality-num': 500,
                 'max-energy-num': 300
+            },
+            form: {
+                goodsName: '',
+                goodsNum: 1
             },
             subscribes: [
                 {
@@ -86,6 +115,20 @@
                     goodsNum: 150
                 }
             ]
+        },
+        methods: {
+            addNewSub() {
+                this.subscribes.push({
+                    checked: true,
+                    goodsName: this.form.goodsName,
+                    goodsNum: this.form.goodsNum,
+                })
+            },
+            getAllUserGoods() {
+                for (let i = 1; i <= this.userGoodsPages; i++) {
+                    $.get('/api/getUserGoods', { page: i })
+                }
+            }
         }
     })
 
@@ -146,6 +189,8 @@
         if (settings.url.startsWith("/api/getUserGoods")) {
             console.debug('fetch getUserGoods')
 
+            who_app.userGoodsPages = xhr.responseJSON.pages
+
             xhr.responseJSON.data.map(datum => {
                 who_app.subscribes.map(sub => {
                     if (sub.checked && who_check_goods(datum, sub)) {
@@ -181,6 +226,6 @@
     $('#fishfarm').click()
     $('#fish-game-btn-c').click()
 
-    // 定时更新用户信息
-    setInterval(function() { getUserInfoFunc() }, 300000)
+    setInterval(function() { getUserInfoFunc() }, 300000) // 定时更新用户信息
+    setInterval(function() { who_app.getAllUserGoods() }, 60000) // 定时更新背包信息
 })();
