@@ -48,7 +48,15 @@
                             }
                             break;
                         case "currentTeamDisband":
+                            delete who_teams[res.data]
                             who_notify('队伍解散')
+                            break;
+                        case "listTeamDisband":
+                            if (typeof res.data == "string") {
+                                delete who_teams[res.data]
+                            } else {
+                                delete who_teams[res.data.teamId]
+                            }
                             break;
                     }
                 })
@@ -58,6 +66,27 @@
         }, 1000)
 
         console.debug('scoketConntionTeam called')
+    }
+
+    unsafeWindow.who_teams = {}
+    let oldTeamReload = teamReload
+    teamReload = function(obj, type) {
+        oldTeamReload(obj, type)
+
+        if (type == 1) { // 初始队伍列表
+            for (const item of obj.data) {
+                who_teams[item.teamId] = item
+            }
+            console.debug('team init')
+        } else if (type == 2) { // 创建队伍反馈
+            who_teams[obj.data.teamId] = obj.data
+            console.debug('team added')
+            console.debug(obj.data)
+        } else if (type == 3) { // 刷新我得队伍
+            who_teams[obj.data.teamId] = obj.data
+            console.debug('team refresh')
+            console.debug(obj.data)
+        }
     }
 
     $('.container-fluid > .homediv > div:first-child').append(`
@@ -88,6 +117,15 @@
         <td>{{ sub.goodsNum }}</td>
     <tr>
 </table>
+<form class="form-inline">
+    <div class="form-group">
+        <label>FB</label>
+        <select class="form-control">
+            <option v-for="option in fbOptions">{{ option.name }}</option>
+        </select>
+    </div>
+    <button class="btn btn-success btn-sm" type="button" @click="autoApplyTeam">Auto Apply Team</button>
+</form>
 </div>
 `)
 
@@ -103,6 +141,8 @@
                 goodsName: '',
                 goodsNum: 1
             },
+            fb: "密林",
+            fbOptions: [],
             subscribes: [
                 {
                     checked: true,
@@ -117,6 +157,23 @@
             ]
         },
         methods: {
+            autoApplyTeam() {
+                console.log('auto apply team start...')
+                if (! this.fb) { return; }
+
+                let level = parseInt($('#current-level').text())
+                console.log(level)
+
+                for (let i = 4; i > 0; i--) {
+                    for (const item of Object.values(who_teams)) {
+                        if (item.scenesName == this.fb && ! item.is_pwd && item.level[0] < level && item.users.length == i) {
+                            console.log(item)
+                            applyTeamFunc(item.teamId, false)
+                            return;
+                        }
+                    }
+                }
+            },
             addNewSub() {
                 this.subscribes.push({
                     checked: true,
@@ -219,6 +276,10 @@
             if (user.energy_num >= who_app.who_userBaseInfo['max-energy-num']) {
                 makeLifeGoodsFunc(2)
             }
+        }
+
+        if (settings.url.startsWith("/api/getCombatBeMonster")) {
+            who_app.fbOptions = xhr.responseJSON.data.combatList
         }
     })
 
