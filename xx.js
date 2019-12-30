@@ -36,8 +36,12 @@
             } else if (socket.connected) {
                 socket.off('disconnect')
                 socket.on('disconnect', function() {
-                    console.warn('disconnect')
-                    who_notify('disconnect')
+                    who_log_warning('disconnect')
+                    who_notify('disconnect', 1)
+
+                    connectFlag = true;
+                    socket = null
+                    setTimeout(function () { scoketConntionTeam(1) }, 3000)
                 })
 
                 socket.on("team",function(res) {
@@ -50,7 +54,7 @@
                             break;
                         case "currentTeamDisband":
                             delete who_teams[res.data]
-                            who_notify('队伍解散')
+                            who_notify('队伍解散', 1)
                             break;
                         case "listTeamDisband":
                             if (typeof res.data == "string") {
@@ -200,6 +204,10 @@
         console.debug('%c'+msg, 'color: green; font-size: 16px;')
     }
 
+    function who_log_warning (msg) {
+        console.debug('%c'+msg, 'color: yellow; font-size: 16px;')
+    }
+
     function send_to_local (data) {
         let a = new FormData();
         a.append('data', JSON.stringify(data))
@@ -214,10 +222,16 @@
         })
     }
 
-    function who_notify (msg) {
+    function who_notify (msg, bark) {
+        let url = host+"/notify?msg="+msg
+
+        if (bark) {
+            url+= '&bark=1'
+        }
+
         GM_xmlhttpRequest({
             method: "GET",
-            url: host+"/notify?msg="+msg,
+            url: url,
             onload: function(response) {
                 console.log(response)
             }
