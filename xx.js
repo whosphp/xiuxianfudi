@@ -9,8 +9,9 @@
 // @downloadURL  https://raw.githubusercontent.com/whosphp/xiuxianfudi/master/xx.js
 // @grant        GM_xmlhttpRequest
 // @grant        unsafeWindow
-// @require      https://cdn.jsdelivr.net/npm/sweetalert2@9
+// @grant        GM_notification
 // @require      https://cdn.jsdelivr.net/npm/vue/dist/vue.js
+// @run-at document-end
 // ==/UserScript==
 
 (function() {
@@ -129,6 +130,10 @@
 </div>
 `)
 
+    var who_system = {
+        maxLevel: 69
+    }
+
     unsafeWindow.who_app = new Vue({
         'el': '#who_helper',
         data: {
@@ -238,7 +243,10 @@
                     console.debug(user)
                     console.debug('goods_id: ' + user._id)
                     // bySellGoodsFunc(user._id)
-                    alert('lower price goods found')
+                    GM_notification({
+                        text: 'lower price goods found',
+                        timeout: 3
+                    })
                 }
             })
         }
@@ -263,7 +271,7 @@
             console.debug('fetch getUserInfo')
 
             let user = xhr.responseJSON.data.user
-            if (user.repair_num > user.next_level_num) {
+            if (user.level < who_system.maxLevel && user.repair_num > user.next_level_num) {
                 upgradeUserLevelFunc()
                 who_notify('level up to '+ (user.level + 1))
             }
