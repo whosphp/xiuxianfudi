@@ -22,7 +22,7 @@
 
     let old = scoketConntionTeam;
     let connectFlag = true;
-    scoketConntionTeam = function () {
+    scoketConntionTeam = function (index) {
         if (connectFlag) {
             connectFlag = false
         } else {
@@ -31,7 +31,7 @@
 
         let interval = setInterval(function () {
             if (socket === undefined || ! socket) {
-                old()
+                old(index)
             } else if (socket.connected) {
                 socket.off('disconnect')
                 socket.on('disconnect', function() {
