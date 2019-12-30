@@ -15,9 +15,4 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-
-Route::get('/notify', function () {
-    return [
-        'output' => \App\Support\Helper::terminalNotify(request()->input('msg', 'none')),
-    ];
-});
+Route::get('/notify', 'NotifyController@index');
