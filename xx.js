@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.3
+// @version      0.4
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -10,6 +10,8 @@
 // @grant        GM_xmlhttpRequest
 // @grant        unsafeWindow
 // @grant        GM_notification
+// @grant        GM_setValue
+// @grant        GM_getValue
 // @require      https://cdn.jsdelivr.net/npm/vue/dist/vue.js
 // @run-at document-end
 // ==/UserScript==
@@ -53,8 +55,11 @@
                             }
                             break;
                         case "currentTeamDisband":
-                            delete who_teams[res.data]
-                            who_notify('队伍解散', 1)
+                            // 自己解散队伍时, 不发送通知
+                            if (res.data !== $("#userId").val()) {
+                                delete who_teams[res.data]
+                                who_notify('队伍解散', 1)
+                            }
                             break;
                         case "listTeamDisband":
                             if (typeof res.data == "string") {
@@ -84,9 +89,16 @@
             }
             console.debug('team init')
         } else if (type == 2) { // 创建队伍反馈
-            who_teams[obj.data.teamId] = obj.data
+            let item = obj.data
+            who_teams[item.teamId] = item
             console.debug('team added')
             console.debug(obj.data)
+
+            // 如果自己是队长 则自动开始循环战斗
+            if (item.teamId === $("#userId").val() && who_app.autoStartPerilTeamFunc) {
+                startPerilTeamFunc(2)
+                who_app.autoStartPerilTeamFunc = false
+            }
         } else if (type == 3) { // 刷新我得队伍
             who_teams[obj.data.teamId] = obj.data
             console.debug('team refresh')
@@ -126,23 +138,29 @@
     <div class="form-group">
         <label>FB</label>
         <select class="form-control" v-model="fb">
-            <option v-for="option in fbOptions">{{ option.name }}</option>
+            <option v-for="option in fbOptions" :value="option._id">{{ option.name }}</option>
         </select>
     </div>
-    <button class="btn btn-success btn-sm" type="button" @click="autoApplyTeam">Auto Apply Team</button>
+    <br/>
+    <button class="btn btn-success btn-sm" type="button" @click="autoApplyTeam(false)">ApplyTeam</button>
+    <br/>
+    <button class="btn btn-success btn-sm" type="button" @click="autoApplyTeam(true)">ApplyOrCreateTeam</button>
+    <br/>
+    <button class="btn btn-success btn-sm" type="button" @click="autoApplyTeam(true, true)">ApplyOrCreateTeam+AutoStart</button>
 </form>
 </div>
 `)
 
     var who_system = {
-        maxLevel: 69
+        maxLevel: 89
     }
 
     unsafeWindow.who_app = new Vue({
         'el': '#who_helper',
         data: {
+            autoStartPerilTeamFunc: false,
             userGoodsPages: 1,// 背包物品总页数
-            who_userBaseInfo: {
+            userBaseInfo: {
                 'max-vitality-num': 500,
                 'max-energy-num': 300
             },
@@ -150,7 +168,7 @@
                 goodsName: '',
                 goodsNum: 1
             },
-            fb: "密林",
+            fb: "",
             fbOptions: [],
             subscribes: [
                 {
@@ -165,22 +183,41 @@
                 }
             ]
         },
+        created() {
+            this.fb = GM_getValue('fb', "5dbfd22d4a3e3d2784a6a670") // 默认是密林
+        },
+        watch: {
+            fb(n, o) {
+                GM_setValue('fb', n)
+            }
+        },
         methods: {
-            autoApplyTeam() {
+            autoApplyTeam(applyOrCreate, autoStartPerilTeamFunc) {
                 console.log('auto apply team start...')
-                if (! this.fb) { return; }
+                if (! this.fb) { return }
 
                 let level = parseInt($('#current-level').text())
                 console.log(level)
 
                 for (let i = 4; i > 0; i--) {
                     for (const item of Object.values(who_teams)) {
-                        if (item.scenesName == this.fb && ! item.is_pwd && item.level[0] < level && item.users.length == i) {
+                        if (item.scenesId == this.fb && ! item.is_pwd && item.level[0] < level && item.users.length == i) {
                             console.log(item)
                             applyTeamFunc(item.teamId, false)
-                            return;
+                            return
                         }
                     }
+                }
+
+                // 找不到队伍则自动创建队伍
+                if (! applyOrCreate) {
+                    return
+                }
+
+                let scene = this.fbOptions.find(item => item._id === this.fb)
+                if (scene !== undefined) {
+                    this.autoStartPerilTeamFunc = !!autoStartPerilTeamFunc
+                    sendToServerBase("createdTeam", { teamScenesId: scene._id, level: [parseInt(scene.min_level), parseInt(scene.max_level)], pwd: "" })
                 }
             },
             addNewSub() {
@@ -246,8 +283,6 @@
         return false;
     }
 
-    // $('#goods-list .goods-sub span').append('<a onclick="who_subcribe">subcribe</a>')
-
     $(document).ajaxComplete(function(event, xhr, settings) {
         if (settings.url.startsWith("/api/getSellGoods")) {
             console.debug('fetch getSellGoods')
@@ -258,8 +293,8 @@
                     console.debug('goods_id: ' + user._id)
                     // bySellGoodsFunc(user._id)
                     GM_notification({
-                        text: 'lower price goods found',
-                        timeout: 3
+                        text: 'Lower price goods found',
+                        timeout: 3000
                     })
                 }
             })
@@ -291,17 +326,24 @@
             }
 
             // 定时制作物品 消耗精力 防止精力爆炸
-            if (user.vitality_num >= who_app.who_userBaseInfo['max-vitality-num']) {
+            if (user.vitality_num >= who_app.userBaseInfo['max-vitality-num']) {
                 makeLifeGoodsFunc(1)
             }
 
-            if (user.energy_num >= who_app.who_userBaseInfo['max-energy-num']) {
+            if (user.energy_num >= who_app.userBaseInfo['max-energy-num']) {
                 makeLifeGoodsFunc(2)
             }
         }
 
         if (settings.url.startsWith("/api/getCombatBeMonster")) {
-            who_app.fbOptions = xhr.responseJSON.data.combatList
+            who_app.fbOptions = [
+                {
+                    name: '云顶封神塔',
+                    _id: '5dfed126016232536617c5e0',
+                    min_level: 0,
+                    max_level: 300
+                }
+            ].concat(xhr.responseJSON.data.combatList)
         }
     })
 
