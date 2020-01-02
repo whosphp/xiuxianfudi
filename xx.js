@@ -198,7 +198,7 @@
         }
     })
 
-    var host = 'http://xx.gl.test:9102'
+    var host = 'http://xx.gl.test'
 
     function who_log_success (msg) {
         console.debug('%c'+msg, 'color: green; font-size: 16px;')
