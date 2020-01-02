@@ -2,13 +2,13 @@
 
 namespace App\Notifications;
 
+use App\Channels\TerminalChannel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Messages\SlackMessage;
 use Illuminate\Notifications\Notification;
 
-class SlackBot extends Notification implements ShouldQueue
+class TerminalBasic extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -32,12 +32,17 @@ class SlackBot extends Notification implements ShouldQueue
      */
     public function via($notifiable)
     {
-        return ['slack'];
+        return [TerminalChannel::class];
     }
 
-    public function toSlack($notifiable)
+    /**
+     * Get the mail representation of the notification.
+     *
+     * @param  mixed  $notifiable
+     * @return \Illuminate\Notifications\Messages\MailMessage
+     */
+    public function toTerminal($notifiable)
     {
-        return (new SlackMessage())
-            ->content($this->data['content']);
+        return $this->data['message'];
     }
 }
