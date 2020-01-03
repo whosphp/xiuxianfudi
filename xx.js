@@ -189,18 +189,15 @@
         },
         methods: {
             autoApplyTeam(applyOrCreate, autoStartPerilTeamFunc) {
-                console.log('auto apply team start...')
                 if (!this.fb) {
                     return
                 }
 
                 let level = parseInt($('#current-level').text())
-                console.log(level)
 
                 for (let i = 4; i > 0; i--) {
                     for (const item of Object.values(who_teams)) {
                         if (item.scenesId == this.fb && !item.is_pwd && item.level[0] < level && item.users.length == i) {
-                            console.log(item)
                             applyTeamFunc(item.teamId, false)
                             return
                         }
@@ -265,9 +262,7 @@
             method: "POST",
             url: host + "/api/log",
             data: a,
-            onload: function (response) {
-                console.log(response)
-            }
+            onload: function (response) {}
         })
     }
 
@@ -283,9 +278,7 @@
         GM_xmlhttpRequest({
             method: "GET",
             url: url,
-            onload: function (response) {
-                console.log(response)
-            }
+            onload: function (response) {}
         })
     }
 
