@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.4
+// @version      0.4.1
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -320,7 +320,8 @@
             console.debug('fetch getUserInfo')
 
             let user = xhr.responseJSON.data.user
-            if (user.level < who_system.maxLevel && user.repair_num > user.next_level_num) {
+            // 50, 70 级需要完成主线任务 手动升级
+            if (! [50, 70].includes(user.level) && user.level < who_system.maxLevel && user.repair_num > user.next_level_num) {
                 upgradeUserLevelFunc()
                 who_notify('level up to '+ (user.level + 1))
             }
