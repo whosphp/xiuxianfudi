@@ -33,11 +33,6 @@
                 socket.on('disconnect', function () {
                     who_log_warning('disconnect')
                     who_notify('disconnect', 1)
-
-                    socket = null
-                    setTimeout(function () {
-                        scoketConntionTeam(1)
-                    }, 10000)
                 })
 
                 socket.on("team", function (res) {
