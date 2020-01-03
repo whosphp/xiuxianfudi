@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.4.3
+// @version      0.4.4
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -19,12 +19,16 @@
 (function () {
     'use strict';
 
+    let roomIndex = GM_getValue('roomIndex')
+
     function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     let old = scoketConntionTeam;
     scoketConntionTeam = function (index) {
+        GM_setValue('roomIndex', index)
+
         let interval = setInterval(function () {
             if (socket === undefined || !socket) {
                 old(index)
@@ -62,7 +66,7 @@
 
                 clearInterval(interval)
             }
-        }, 1000)
+        }, 1500)
     }
 
     unsafeWindow.who_teams = {}
@@ -90,6 +94,7 @@
 
     $('.container-fluid > .homediv > div:first-child').append(`
 <div id="who_helper">
+<label>组队大厅: ${roomIndex}</label>
 <form class="form-horizontal">
     <div class="form-group">
         <label class="col-sm-4 control-label">名称</label>
@@ -335,7 +340,11 @@
 
     // 进入组队大厅
     $('#fishfarm').click()
-    $('#fish-game-btn-c').click()
+    if (roomIndex) {
+        setTimeout(function () {
+            $('a[id="fish-game-btn-c"]')[roomIndex].click()
+        }, 500)
+    }
 
     setInterval(function () {
         getUserInfoFunc()
