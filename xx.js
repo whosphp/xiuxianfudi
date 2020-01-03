@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.4.1
+// @version      0.4.2
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -16,7 +16,7 @@
 // @run-at document-end
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
     function sleep(ms) {
@@ -33,20 +33,22 @@
         }
 
         let interval = setInterval(function () {
-            if (socket === undefined || ! socket) {
+            if (socket === undefined || !socket) {
                 old(index)
             } else if (socket.connected) {
                 socket.off('disconnect')
-                socket.on('disconnect', function() {
+                socket.on('disconnect', function () {
                     who_log_warning('disconnect')
                     who_notify('disconnect', 1)
 
                     connectFlag = true;
                     socket = null
-                    setTimeout(function () { scoketConntionTeam(1) }, 3000)
+                    setTimeout(function () {
+                        scoketConntionTeam(1)
+                    }, 3000)
                 })
 
-                socket.on("team",function(res) {
+                socket.on("team", function (res) {
                     let type = res.type
                     switch (type) {
                         case "msg":
@@ -74,25 +76,20 @@
                 clearInterval(interval)
             }
         }, 1000)
-
-        console.debug('scoketConntionTeam called')
     }
 
     unsafeWindow.who_teams = {}
     let oldTeamReload = teamReload
-    teamReload = function(obj, type) {
+    teamReload = function (obj, type) {
         oldTeamReload(obj, type)
 
         if (type == 1) { // 初始队伍列表
             for (const item of obj.data) {
                 who_teams[item.teamId] = item
             }
-            console.debug('team init')
         } else if (type == 2) { // 创建队伍反馈
             let item = obj.data
             who_teams[item.teamId] = item
-            console.debug('team added')
-            console.debug(obj.data)
 
             // 如果自己是队长 则自动开始循环战斗
             if (item.teamId === $("#userId").val() && who_app.autoStartPerilTeamFunc) {
@@ -101,8 +98,6 @@
             }
         } else if (type == 3) { // 刷新我得队伍
             who_teams[obj.data.teamId] = obj.data
-            console.debug('team refresh')
-            console.debug(obj.data)
         }
     }
 
@@ -151,16 +146,16 @@
 </div>
 `)
 
-    var who_system = {
-        maxLevel: 89
-    }
-
     unsafeWindow.who_app = new Vue({
         'el': '#who_helper',
         data: {
+            system: {
+                maxLevel: 89
+            },
             autoStartPerilTeamFunc: false,
             userGoodsPages: 1,// 背包物品总页数
             userBaseInfo: {
+                nickname: 'nobody',
                 'max-vitality-num': 500,
                 'max-energy-num': 300
             },
@@ -185,6 +180,7 @@
         },
         created() {
             this.fb = GM_getValue('fb', "5dbfd22d4a3e3d2784a6a670") // 默认是密林
+            this.getUserInitInfo()
         },
         watch: {
             fb(n, o) {
@@ -194,14 +190,16 @@
         methods: {
             autoApplyTeam(applyOrCreate, autoStartPerilTeamFunc) {
                 console.log('auto apply team start...')
-                if (! this.fb) { return }
+                if (!this.fb) {
+                    return
+                }
 
                 let level = parseInt($('#current-level').text())
                 console.log(level)
 
                 for (let i = 4; i > 0; i--) {
                     for (const item of Object.values(who_teams)) {
-                        if (item.scenesId == this.fb && ! item.is_pwd && item.level[0] < level && item.users.length == i) {
+                        if (item.scenesId == this.fb && !item.is_pwd && item.level[0] < level && item.users.length == i) {
                             console.log(item)
                             applyTeamFunc(item.teamId, false)
                             return
@@ -217,7 +215,11 @@
                 let scene = this.fbOptions.find(item => item._id === this.fb)
                 if (scene !== undefined) {
                     this.autoStartPerilTeamFunc = !!autoStartPerilTeamFunc
-                    sendToServerBase("createdTeam", { teamScenesId: scene._id, level: [parseInt(scene.min_level), parseInt(scene.max_level)], pwd: "" })
+                    sendToServerBase("createdTeam", {
+                        teamScenesId: scene._id,
+                        level: [parseInt(scene.min_level), parseInt(scene.max_level)],
+                        pwd: ""
+                    })
                 }
             },
             addNewSub() {
@@ -229,53 +231,65 @@
             },
             getAllUserGoods() {
                 for (let i = 1; i <= this.userGoodsPages; i++) {
-                    $.get('/api/getUserGoods', { page: i })
+                    $.get('/api/getUserGoods', {page: i})
                 }
+            },
+            getUserInitInfo() {
+                fetch("http://joucks.cn:3344/api/getUserInitInfo", {
+                    credentials: "include",
+                    method: "GET",
+                }).then(function (response) {
+                    return response.json()
+                }).then(res => {
+                    this.userBaseInfo.nickname = res.data.user.nickname
+                })
             }
         }
     })
 
     var host = 'http://xx.gl.test'
 
-    function who_log_success (msg) {
-        console.debug('%c'+msg, 'color: green; font-size: 16px;')
+    function who_log_success(msg) {
+        console.debug('%c' + msg, 'color: green; font-size: 16px;')
     }
 
-    function who_log_warning (msg) {
-        console.debug('%c'+msg, 'color: yellow; font-size: 16px;')
+    function who_log_warning(msg) {
+        console.debug('%c' + msg, 'color: yellow; font-size: 16px;')
     }
 
-    function send_to_local (data) {
+    function send_to_local(data) {
         let a = new FormData();
         a.append('data', JSON.stringify(data))
 
         GM_xmlhttpRequest({
             method: "POST",
-            url: host+"/api/log",
+            url: host + "/api/log",
             data: a,
-            onload: function(response) {
+            onload: function (response) {
                 console.log(response)
             }
         })
     }
 
-    function who_notify (msg, bark) {
-        let url = host+"/notify?msg="+msg
+    function who_notify(msg, bark) {
+        msg = who_app.userBaseInfo.nickname + ':' + msg
+
+        let url = host + "/notify?msg=" + msg
 
         if (bark) {
-            url+= '&bark=1'
+            url += '&bark=1'
         }
 
         GM_xmlhttpRequest({
             method: "GET",
             url: url,
-            onload: function(response) {
+            onload: function (response) {
                 console.log(response)
             }
         })
     }
 
-    function who_check_goods (datum, subscribe) {
+    function who_check_goods(datum, subscribe) {
         if (datum.goods && datum.goods.name == subscribe.goodsName && datum.count >= subscribe.goodsNum) {
             return true;
         }
@@ -283,29 +297,22 @@
         return false;
     }
 
-    $(document).ajaxComplete(function(event, xhr, settings) {
-        if (settings.url.startsWith("/api/getSellGoods")) {
-            console.debug('fetch getSellGoods')
+    $(document).ajaxComplete(function (event, xhr, settings) {
+        let res = xhr.responseJSON
 
-            xhr.responseJSON.data.playerSellUser.map(user => {
-                if (user.goods && user.goods.name == '技-出云幻星' && user.game_gold / user.count <= 300) {
-                    console.debug(user)
-                    console.debug('goods_id: ' + user._id)
-                    // bySellGoodsFunc(user._id)
-                    GM_notification({
-                        text: 'Lower price goods found',
-                        timeout: 3000
-                    })
-                }
+        if (settings.url.startsWith("/api/getUserInitInfo")) {
+            who_app.userBaseInfo.nickname = res.data.user.nickname
+        }
+
+        if (settings.url.startsWith("/api/getSellGoods")) {
+            res.data.playerSellUser.map(user => {
+                // 遍历线上交易的物品 todo
             })
         }
 
         if (settings.url.startsWith("/api/getUserGoods")) {
-            console.debug('fetch getUserGoods')
-
-            who_app.userGoodsPages = xhr.responseJSON.pages
-
-            xhr.responseJSON.data.map(datum => {
+            who_app.userGoodsPages = res.pages
+            res.data.map(datum => {
                 who_app.subscribes.map(sub => {
                     if (sub.checked && who_check_goods(datum, sub)) {
                         who_log_success(sub.goodsName + '数量达成目标')
@@ -317,13 +324,11 @@
         }
 
         if (settings.url.startsWith("/api/getUserInfo")) {
-            console.debug('fetch getUserInfo')
-
-            let user = xhr.responseJSON.data.user
+            let user = res.data.user
             // 50, 70 级需要完成主线任务 手动升级
-            if (! [50, 70].includes(user.level) && user.level < who_system.maxLevel && user.repair_num > user.next_level_num) {
+            if (![50, 70].includes(user.level) && user.level < who_app.system.maxLevel && user.repair_num > user.next_level_num) {
                 upgradeUserLevelFunc()
-                who_notify('level up to '+ (user.level + 1))
+                who_notify('level up to ' + (user.level + 1))
             }
 
             // 定时制作物品 消耗精力 防止精力爆炸
@@ -344,7 +349,7 @@
                     min_level: 0,
                     max_level: 300
                 }
-            ].concat(xhr.responseJSON.data.combatList)
+            ].concat(res.data.combatList)
         }
     })
 
@@ -352,6 +357,10 @@
     $('#fishfarm').click()
     $('#fish-game-btn-c').click()
 
-    setInterval(function() { getUserInfoFunc() }, 300000) // 定时更新用户信息
-    setInterval(function() { who_app.getAllUserGoods() }, 60000) // 定时更新背包信息
+    setInterval(function () {
+        getUserInfoFunc()
+    }, 300000) // 定时更新用户信息
+    setInterval(function () {
+        who_app.getAllUserGoods()
+    }, 60000) // 定时更新背包信息
 })();
