@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.4.2
+// @version      0.4.3
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -24,14 +24,7 @@
     }
 
     let old = scoketConntionTeam;
-    let connectFlag = true;
     scoketConntionTeam = function (index) {
-        if (connectFlag) {
-            connectFlag = false
-        } else {
-            return
-        }
-
         let interval = setInterval(function () {
             if (socket === undefined || !socket) {
                 old(index)
@@ -41,11 +34,10 @@
                     who_log_warning('disconnect')
                     who_notify('disconnect', 1)
 
-                    connectFlag = true;
                     socket = null
                     setTimeout(function () {
                         scoketConntionTeam(1)
-                    }, 3000)
+                    }, 10000)
                 })
 
                 socket.on("team", function (res) {
