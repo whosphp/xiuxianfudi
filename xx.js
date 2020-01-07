@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.4.4
+// @version      0.4.5
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -19,7 +19,12 @@
 (function () {
     'use strict';
 
-    let roomIndex = GM_getValue('roomIndex')
+    let userId = $('#userId').val()
+    function getKey(key) {
+        return userId + ':' + key
+    }
+
+    let roomIndex = GM_getValue(getKey('roomIndex'), 'unset')
 
     function sleep(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -27,7 +32,7 @@
 
     let old = scoketConntionTeam;
     scoketConntionTeam = function (index) {
-        GM_setValue('roomIndex', index)
+        GM_setValue(getKey('roomIndex'), index)
 
         let interval = setInterval(function () {
             if (socket === undefined || !socket) {
@@ -340,7 +345,7 @@
 
     // 进入组队大厅
     $('#fishfarm').click()
-    if (roomIndex) {
+    if (roomIndex !== 'unset') {
         setTimeout(function () {
             $('a[id="fish-game-btn-c"]')[roomIndex].click()
         }, 500)

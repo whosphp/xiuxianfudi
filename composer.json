@@ -12,6 +12,7 @@
         "barryvdh/laravel-ide-helper": "^2.6",
         "fideloper/proxy": "^4.0",
         "guzzlehttp/guzzle": "^6.5",
+        "jenssegers/mongodb": "^3.6",
         "laravel/framework": "^6.2",
         "laravel/horizon": "^3.4",
         "laravel/slack-notification-channel": "^2.0",
