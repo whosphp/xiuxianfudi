@@ -20,6 +20,10 @@
     'use strict';
 
     let userId = $('#userId').val()
+    if (! userId) {
+        console.log('Can not find user id')
+        return;
+    }
     function getKey(key) {
         return userId + ':' + key
     }
