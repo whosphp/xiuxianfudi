@@ -13,9 +13,9 @@ use Illuminate\Http\Request;
 |
 */
 
-Route::post('log', function (Request $request) {
-    Log::info($request->input('data'));
-});
+Route::get('getFactionTasksValued', 'ApiController@getFactionTasksValued');
+Route::post('log', 'LogController@deal');
+Route::get('test', 'LogController@test');
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();

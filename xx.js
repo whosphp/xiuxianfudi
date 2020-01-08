@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.4.5
+// @version      0.5
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -16,14 +16,30 @@
 // @run-at document-end
 // ==/UserScript==
 
-(function () {
+let who_interval = setInterval(function () {
     'use strict';
 
     let userId = $('#userId').val()
     if (! userId) {
         console.log('Can not find user id')
         return;
+    } else {
+        clearInterval(who_interval)
     }
+
+    // 只做这些帮派任务
+    let valuedFactionTasks = [
+        "5dca6a232b57001e2bc0273a",
+        "5e13df3496d23f0961a85212",
+        "5dca69c12b57001e2bc02733",
+        "5dca839096003f20fd0df257",
+        "5df337f1b0708370b73f36a3",
+        "5dfc40ff6439e975fbbc6c7b",
+        "5dfa1ad779b2846774bd9f5b",
+        "5e0c2a502837c176c87ba1ef",
+        "5dfec9bc016232536617c314"
+    ]
+
     function getKey(key) {
         return userId + ':' + key
     }
@@ -345,6 +361,48 @@
                 }
             ].concat(res.data.combatList)
         }
+
+        if (settings.url.startsWith("/api/getUserTask")) {
+            let factionTask = res.data.find(datum => datum.task.task_type === 4)
+            if (factionTask !== undefined) {
+                if (valuedFactionTasks.includes(factionTask.task._id)) {
+                    setTimeout(function () {
+                        payUserTask(factionTask.utid)
+                    }, 1000)
+                } else {
+                    setTimeout(function () {
+                        colseUserTask(factionTask.utid)
+                    }, 1000)
+                }
+            }
+
+            send_to_local({
+                type: 'task',
+                data: res.data.map(datum => {
+                    return datum.task
+                })
+            })
+        }
+
+        if (settings.url.startsWith("/api/payUserTask")) {
+            if (res.code == 200) {
+                setTimeout(function () {
+                    getFationTaskFunc()
+                }, 1000)
+            } else {
+                who_notify(res.msg)
+            }
+        }
+
+        if (settings.url.startsWith("/api/closeUserTask")) {
+            if (res.code == 200) {
+                setTimeout(function () {
+                    getFationTaskFunc()
+                }, 1000)
+            } else {
+                who_notify(res.msg)
+            }
+        }
     })
 
     // 进入组队大厅
@@ -361,4 +419,4 @@
     setInterval(function () {
         who_app.getAllUserGoods()
     }, 60000) // 定时更新背包信息
-})();
+}, 500)
