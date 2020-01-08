@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.5.1
+// @version      0.5.2
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -20,6 +20,7 @@ let who_interval = setInterval(function () {
     'use strict';
 
     let userId = $('#userId').val()
+    let currentLevel = parseInt($('#current-level').text())
     if (! userId) {
         console.log('Can not find user id')
         return;
@@ -127,7 +128,7 @@ let who_interval = setInterval(function () {
         <td style="vertical-align: middle;"><button class="btn btn-success btn-xs" type="button" @click="addNewSub">新建</button></td>
     </tr>
     <tr v-for="sub in subscribes">
-        <td><input type="checkbox" :checked="sub.checked" @click="sub.checked = ! sub.checked"></td>
+        <td><input type="checkbox" :checked="sub.checked" @click="subCheckedClicked(sub)"></td>
         <td>{{ sub.goodsName }}</td>
         <td>{{ sub.goodsNum }}</td>
     <tr>
@@ -159,8 +160,8 @@ let who_interval = setInterval(function () {
             userGoodsPages: 1,// 背包物品总页数
             userBaseInfo: {
                 nickname: 'nobody',
-                'max-vitality-num': 500,
-                'max-energy-num': 300
+                'max-vitality-num': 500 + currentLevel,
+                'max-energy-num': 300 + currentLevel
             },
             form: {
                 goodsName: '',
@@ -168,18 +169,7 @@ let who_interval = setInterval(function () {
             },
             fb: "",
             fbOptions: [],
-            subscribes: [
-                {
-                    checked: true,
-                    goodsName: '蚊针',
-                    goodsNum: 10
-                },
-                {
-                    checked: true,
-                    goodsName: '蜥血',
-                    goodsNum: 150
-                }
-            ]
+            subscribes: GM_getValue(getKey('subscribes'), [])
         },
         created() {
             this.fb = GM_getValue('fb', "5dbfd22d4a3e3d2784a6a670") // 默认是密林
@@ -243,6 +233,13 @@ let who_interval = setInterval(function () {
                 }).then(res => {
                     this.userBaseInfo.nickname = res.data.user.nickname
                 })
+            },
+            setSubscribes() {
+                GM_setValue(getKey('subscribes'), this.subscribes)
+            },
+            subCheckedClicked(sub) {
+                sub.checked = ! sub.checked
+                this.setSubscribes()
             }
         }
     })
@@ -314,6 +311,7 @@ let who_interval = setInterval(function () {
                         who_log_success(sub.goodsName + '数量达成目标')
                         who_notify(sub.goodsName + '数量达成目标')
                         sub.checked = false;
+                        who_app.setSubscribes()
                     }
                 })
             })
