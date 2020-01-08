@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.5
+// @version      0.5.1
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -120,26 +120,12 @@ let who_interval = setInterval(function () {
     $('.container-fluid > .homediv > div:first-child').append(`
 <div id="who_helper">
 <label>组队大厅: ${roomIndex}</label>
-<form class="form-horizontal">
-    <div class="form-group">
-        <label class="col-sm-4 control-label">名称</label>
-        <div class="col-sm-8">
-            <input class="form-control" v-model="form.goodsName" type="text">
-        </div>
-    </div>
-    <div class="form-group">
-        <label class="col-sm-4 control-label">数量</label>
-        <div class="col-sm-8">
-            <input class="form-control" v-model="form.goodsNum" type="number">
-        </div>
-    </div>
-    <div class="form-group">
-        <div class="col-sm-offset-4 col-sm-8">
-            <button class="btn btn-success btn-sm" type="button" @click="addNewSub">新建</button>
-        </div>
-    </div>
-</form>
-<table class="table table-condensed">
+<table class="table table-condensed table-bordered">
+    <tr>
+        <td><input class="form-control input-sm" style="width: 60px;" v-model="form.goodsName" type="text" placeholder="名称"></td>
+        <td><input class="form-control input-sm" style="width: 60px;" v-model="form.goodsNum" type="number" placeholder="数量"></td>
+        <td style="vertical-align: middle;"><button class="btn btn-success btn-xs" type="button" @click="addNewSub">新建</button></td>
+    </tr>
     <tr v-for="sub in subscribes">
         <td><input type="checkbox" :checked="sub.checked" @click="sub.checked = ! sub.checked"></td>
         <td>{{ sub.goodsName }}</td>
@@ -147,18 +133,18 @@ let who_interval = setInterval(function () {
     <tr>
 </table>
 <form class="form-inline">
-    <div class="form-group">
+    <div class="form-group form-group-sm">
         <label>FB</label>
         <select class="form-control" v-model="fb">
             <option v-for="option in fbOptions" :value="option._id">{{ option.name }}</option>
         </select>
     </div>
     <br/>
-    <button class="btn btn-success btn-sm" type="button" @click="autoApplyTeam(false)">ApplyTeam</button>
+    <button class="btn btn-success btn-xs" type="button" @click="autoApplyTeam(false)">ApplyTeam</button>
     <br/>
-    <button class="btn btn-success btn-sm" type="button" @click="autoApplyTeam(true)">ApplyOrCreateTeam</button>
+    <button class="btn btn-success btn-xs" type="button" @click="autoApplyTeam(true)">ApplyOrCreateTeam</button>
     <br/>
-    <button class="btn btn-success btn-sm" type="button" @click="autoApplyTeam(true, true)">ApplyOrCreateTeam+AutoStart</button>
+    <button class="btn btn-success btn-xs" type="button" @click="autoApplyTeam(true, true)">ApplyOrCreateTeam+AutoStart</button>
 </form>
 </div>
 `)
@@ -178,7 +164,7 @@ let who_interval = setInterval(function () {
             },
             form: {
                 goodsName: '',
-                goodsNum: 1
+                goodsNum: ''
             },
             fb: "",
             fbOptions: [],
