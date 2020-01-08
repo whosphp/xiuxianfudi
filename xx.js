@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.5.2
+// @version      0.5.3
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -15,6 +15,19 @@
 // @require      https://cdn.jsdelivr.net/npm/vue/dist/vue.js
 // @run-at document-end
 // ==/UserScript==
+
+window.addEventListener("contextmenu",
+    function(e){
+        e.stopPropagation()
+    }, true);
+window.addEventListener("selectstart",
+    function(e){
+        e.stopPropagation()
+    }, true);
+window.addEventListener("dragstart",
+    function(e){
+        e.stopPropagation()
+    }, true);
 
 let who_interval = setInterval(function () {
     'use strict';
