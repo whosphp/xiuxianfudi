@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.5.3
+// @version      0.5.4
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -339,11 +339,11 @@ let who_interval = setInterval(function () {
             }
 
             // 定时制作物品 消耗精力 防止精力爆炸
-            if (user.vitality_num >= who_app.userBaseInfo['max-vitality-num']) {
+            if (user.vitality_num + 5 >= who_app.userBaseInfo['max-vitality-num']) {
                 makeLifeGoodsFunc(1)
             }
 
-            if (user.energy_num >= who_app.userBaseInfo['max-energy-num']) {
+            if (user.energy_num + 5 >= who_app.userBaseInfo['max-energy-num']) {
                 makeLifeGoodsFunc(2)
             }
         }
