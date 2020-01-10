@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.5.4
+// @version      0.5.5
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -134,6 +134,14 @@ let who_interval = setInterval(function () {
     $('.container-fluid > .homediv > div:first-child').append(`
 <div id="who_helper">
 <label>组队大厅: ${roomIndex}</label>
+<label>Me: ${userId}</label>
+<table class="table table-condensed table-bordered">
+<tr>
+    <td><input type="text" v-model="captain" placeholder="队长" class="form-control input-sm"></td>
+    <td><input type="text" v-model="inTeamPwd" placeholder="密码" class="form-control input-sm"></td>
+    <td><button class="btn btn-success btn-xs" type="button" @click="applyTeam">加入</button></td>
+</tr>
+</table>
 <table class="table table-condensed table-bordered">
     <tr>
         <td><input class="form-control input-sm" style="width: 60px;" v-model="form.goodsName" type="text" placeholder="名称"></td>
@@ -166,6 +174,8 @@ let who_interval = setInterval(function () {
     unsafeWindow.who_app = new Vue({
         'el': '#who_helper',
         data: {
+            captain: GM_getValue(getKey('captain'), ''),
+            inTeamPwd: GM_getValue(getKey('inTeamPwd'), ''),
             system: {
                 maxLevel: 89
             },
@@ -189,8 +199,14 @@ let who_interval = setInterval(function () {
             this.getUserInitInfo()
         },
         watch: {
+            captain(n, o) {
+                GM_setValue(getKey('captain'), n)
+            },
+            inTeamPwd(n, o) {
+                GM_setValue(getKey('inTeamPwd'), n)
+            },
             fb(n, o) {
-                GM_setValue('fb', n)
+                GM_setValue(getKey('fb'), n)
             }
         },
         methods: {
@@ -231,6 +247,12 @@ let who_interval = setInterval(function () {
                     goodsName: this.form.goodsName,
                     goodsNum: this.form.goodsNum,
                 })
+            },
+            applyTeam() {
+                if (this.captain) {
+                    $('#inTeamPwd').val('651')
+                    applyTeamFunc(this.captain, true)
+                }
             },
             getAllUserGoods() {
                 for (let i = 1; i <= this.userGoodsPages; i++) {
