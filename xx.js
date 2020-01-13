@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.5.5
+// @version      0.5.6
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -190,7 +190,7 @@ let who_interval = setInterval(function () {
                 goodsName: '',
                 goodsNum: ''
             },
-            fb: "",
+            fb: GM_getValue(getKey('fb', "")),
             fbOptions: [],
             subscribes: GM_getValue(getKey('subscribes'), [])
         },
