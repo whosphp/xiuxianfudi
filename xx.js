@@ -191,12 +191,12 @@ let who_interval = setInterval(function () {
                 goodsName: '',
                 goodsNum: ''
             },
-            fb: GM_getValue(getKey('fb'), ""),
+            fb: "",
             fbOptions: [],
             subscribes: GM_getValue(getKey('subscribes'), [])
         },
         created() {
-            this.fb = GM_getValue('fb', "5dbfd22d4a3e3d2784a6a670") // 默认是密林
+            this.fb = GM_getValue(getKey('fb'), "5dbfd22d4a3e3d2784a6a670") // 默认是密林
             this.getUserInitInfo()
         },
         watch: {
