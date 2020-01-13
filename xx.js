@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.5.6
+// @version      0.5.7
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -51,7 +51,8 @@ let who_interval = setInterval(function () {
         "5dfc40ff6439e975fbbc6c7b",
         "5dfa1ad779b2846774bd9f5b",
         "5e0c2a502837c176c87ba1ef",
-        "5dfec9bc016232536617c314"
+        "5dfec9bc016232536617c314",
+        "5e17f6213ede2d40f654ced5", // 孔雀的羽毛
     ]
 
     function getKey(key) {
