@@ -191,7 +191,7 @@ let who_interval = setInterval(function () {
                 goodsName: '',
                 goodsNum: ''
             },
-            fb: GM_getValue(getKey('fb', "")),
+            fb: GM_getValue(getKey('fb'), ""),
             fbOptions: [],
             subscribes: GM_getValue(getKey('subscribes'), [])
         },
