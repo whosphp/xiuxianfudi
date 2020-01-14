@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.5.8
+// @version      0.5.9
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -37,9 +37,15 @@ let who_interval = setInterval(function () {
     if (! userId) {
         console.log('Can not find user id')
         return;
-    } else {
-        clearInterval(who_interval)
     }
+
+    if (! currentLevel) {
+        console.log('Can not get user level')
+        return;
+    }
+
+    console.log(userId, currentLevel)
+    clearInterval(who_interval)
 
     // 只做这些帮派任务
     let valuedFactionTasks = [
@@ -132,32 +138,31 @@ let who_interval = setInterval(function () {
 <div id="who_helper">
 <label>组队大厅: ${roomIndex}</label>
 <label>Me: ${userId}</label>
-<table class="table table-condensed table-bordered">
-<tr>
-    <td><input type="text" v-model="captain" placeholder="队长" class="form-control input-sm"></td>
-    <td><input type="text" v-model="inTeamPwd" placeholder="密码" class="form-control input-sm"></td>
-    <td><button class="btn btn-success btn-xs" type="button" @click="applyTeam">加入</button></td>
-</tr>
-</table>
-<table class="table table-bordered table-condensed">
+<label>Battle: <span class="text-success">{{ combat_ok_count }}</span> / <span class="text-danger">{{ combat_bad_count }}</span> / <span>{{ combat_total_count }}</span> / <span class="text-warning">{{ combat_success_rate }}</span></label>
+<table class="table table-bordered table-condensed" style="margin-bottom: 5px;">
 <tr>
     <td>自动帮派任务</td>
     <td><button class="btn btn-xs" type="button" @click="autoFactionTask = !autoFactionTask">{{ autoFactionTask ? '✔' : '✘' }}</button></td>
 </tr>
 </table>
 <form class="form-inline">
+    <div style="margin-bottom: 5px">
+        <div class="form-group form-group-sm">
+            <input type="text" v-model="captain" placeholder="队长" class="form-control input-sm" style="width: 120px;">
+        </div>
+        <div class="form-group form-group-sm">
+            <input type="text" v-model="inTeamPwd" placeholder="密码" class="form-control input-sm" style="width: 50px;">
+        </div>
+        <button class="btn btn-success btn-xs" type="button" @click="applyTeam">加入</button>
+    </div>
     <div class="form-group form-group-sm">
-        <label>FB</label>
         <select class="form-control" v-model="fb">
             <option v-for="option in fbOptions" :value="option._id">{{ option.name }}</option>
         </select>
     </div>
-    <br/>
-    <button class="btn btn-success btn-xs" type="button" @click="autoApplyTeam(false)">ApplyTeam</button>
-    <br/>
-    <button class="btn btn-success btn-xs" type="button" @click="autoApplyTeam(true)">ApplyOrCreateTeam</button>
-    <br/>
-    <button class="btn btn-success btn-xs" type="button" @click="autoApplyTeam(true, true)">ApplyOrCreateTeam+AutoStart</button>
+    <button class="btn btn-success btn-xs" type="button" @click="autoApplyTeam(false)" title="ApplyTeam">A</button>
+    <button class="btn btn-success btn-xs" type="button" @click="autoApplyTeam(true)" title="ApplyOrCreateTeam">AC</button>
+    <button class="btn btn-success btn-xs" type="button" @click="autoApplyTeam(true, true)" title="ApplyOrCreateTeam+AutoStart">ACS</button>
 </form>
 </div>
 `)
@@ -166,6 +171,10 @@ let who_interval = setInterval(function () {
         'el': '#who_helper',
         data: {
             autoFactionTask: false,
+            combat_ok_count: 0,
+            combat_bad_count: 0,
+            combat_total_count: 0,
+            combat_success_rate: '100.0%',
             captain: GM_getValue(getKey('captain'), ''),
             inTeamPwd: GM_getValue(getKey('inTeamPwd'), ''),
             system: {
@@ -189,6 +198,17 @@ let who_interval = setInterval(function () {
         created() {
             this.fb = GM_getValue(getKey('fb'), "5dbfd22d4a3e3d2784a6a670") // 默认是密林
             this.getUserInitInfo()
+
+            setInterval(() => {
+                if (typeof(combat_ok_count) !== "undefined" && typeof(combat_bad_count) !== "undefined") {
+                    if (combat_ok_count + combat_bad_count > 0) {
+                        this.combat_ok_count = combat_ok_count
+                        this.combat_bad_count = combat_bad_count
+                        this.combat_total_count = combat_ok_count + combat_bad_count
+                        this.combat_success_rate = (this.combat_ok_count * 100 / this.combat_total_count).toFixed(1) + '%'
+                    }
+                }
+            }, 5000)
         },
         watch: {
             captain(n, o) {
