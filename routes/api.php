@@ -13,7 +13,10 @@ use Illuminate\Http\Request;
 |
 */
 
+Route::resource('users', 'UsersController');
 Route::get('getFactionTasksValued', 'ApiController@getFactionTasksValued');
+Route::get('getUserInfo/{name}', 'ApiController@getUserInfo');
+Route::get('getUserGoods/{name}', 'ApiController@getUserGoods');
 Route::post('log', 'LogController@deal');
 Route::get('test', 'LogController@test');
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 
 
 use App\Models\Task;
+use App\Support\Xx;
 
 class ApiController extends Controller
 {
@@ -15,5 +16,15 @@ class ApiController extends Controller
             ->select('uuid')
             ->get()
             ->pluck('uuid');
+    }
+
+    public function getUserInfo($name)
+    {
+        return Xx::getUserInfo($name);
+    }
+
+    public function getUserGoods($name)
+    {
+        return Xx::getUserGoods($name);
     }
 }

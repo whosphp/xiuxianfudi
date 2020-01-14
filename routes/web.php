@@ -15,4 +15,5 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('goods', 'GoodsController@index');
 Route::get('/notify', 'NotifyController@index');
