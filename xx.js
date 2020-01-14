@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.5.7
+// @version      0.5.8
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -60,10 +60,6 @@ let who_interval = setInterval(function () {
     }
 
     let roomIndex = GM_getValue(getKey('roomIndex'), 'unset')
-
-    function sleep(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
 
     let old = scoketConntionTeam;
     scoketConntionTeam = function (index) {
@@ -143,17 +139,11 @@ let who_interval = setInterval(function () {
     <td><button class="btn btn-success btn-xs" type="button" @click="applyTeam">加入</button></td>
 </tr>
 </table>
-<table class="table table-condensed table-bordered">
-    <tr>
-        <td><input class="form-control input-sm" style="width: 60px;" v-model="form.goodsName" type="text" placeholder="名称"></td>
-        <td><input class="form-control input-sm" style="width: 60px;" v-model="form.goodsNum" type="number" placeholder="数量"></td>
-        <td style="vertical-align: middle;"><button class="btn btn-success btn-xs" type="button" @click="addNewSub">新建</button></td>
-    </tr>
-    <tr v-for="sub in subscribes">
-        <td><input type="checkbox" :checked="sub.checked" @click="subCheckedClicked(sub)"></td>
-        <td>{{ sub.goodsName }}</td>
-        <td>{{ sub.goodsNum }}</td>
-    <tr>
+<table class="table table-bordered table-condensed">
+<tr>
+    <td>自动帮派任务</td>
+    <td><button class="btn btn-xs" type="button" @click="autoFactionTask = !autoFactionTask">{{ autoFactionTask ? '✔' : '✘' }}</button></td>
+</tr>
 </table>
 <form class="form-inline">
     <div class="form-group form-group-sm">
@@ -175,6 +165,7 @@ let who_interval = setInterval(function () {
     unsafeWindow.who_app = new Vue({
         'el': '#who_helper',
         data: {
+            autoFactionTask: false,
             captain: GM_getValue(getKey('captain'), ''),
             inTeamPwd: GM_getValue(getKey('inTeamPwd'), ''),
             system: {
@@ -385,14 +376,16 @@ let who_interval = setInterval(function () {
         if (settings.url.startsWith("/api/getUserTask")) {
             let factionTask = res.data.find(datum => datum.task.task_type === 4)
             if (factionTask !== undefined) {
-                if (valuedFactionTasks.includes(factionTask.task._id)) {
-                    setTimeout(function () {
-                        payUserTask(factionTask.utid)
-                    }, 1000)
-                } else {
-                    setTimeout(function () {
-                        colseUserTask(factionTask.utid)
-                    }, 1000)
+                if (who_app.autoFactionTask) {
+                    if (valuedFactionTasks.includes(factionTask.task._id)) {
+                        setTimeout(function () {
+                            payUserTask(factionTask.utid)
+                        }, 1000)
+                    } else {
+                        setTimeout(function () {
+                            colseUserTask(factionTask.utid)
+                        }, 1000)
+                    }
                 }
             }
 
@@ -406,9 +399,11 @@ let who_interval = setInterval(function () {
 
         if (settings.url.startsWith("/api/payUserTask")) {
             if (res.code == 200) {
-                setTimeout(function () {
-                    getFationTaskFunc()
-                }, 1000)
+                if (who_app.autoFactionTask) {
+                    setTimeout(function () {
+                        getFationTaskFunc()
+                    }, 1000)
+                }
             } else {
                 who_notify(res.msg)
             }
@@ -416,9 +411,11 @@ let who_interval = setInterval(function () {
 
         if (settings.url.startsWith("/api/closeUserTask")) {
             if (res.code == 200) {
-                setTimeout(function () {
-                    getFationTaskFunc()
-                }, 1000)
+                if (who_app.autoFactionTask) {
+                    setTimeout(function () {
+                        getFationTaskFunc()
+                    }, 1000)
+                }
             } else {
                 who_notify(res.msg)
             }
