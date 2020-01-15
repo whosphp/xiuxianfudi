@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.6
+// @version      0.6.1
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -397,8 +397,8 @@ let who_interval = setInterval(function () {
 
         if (settings.url.startsWith("/api/getUserInfo")) {
             let user = res.data.user
-            // 50, 70 级需要完成主线任务 手动升级
-            if (![50, 70].includes(user.level) && user.level < who_app.system.maxLevel && user.repair_num > user.next_level_num) {
+            // 50, 60, 70 可能需要主线任务 或者 需要攒经验, 手动升级
+            if (![50, 60, 70].includes(user.level) && user.level < who_app.system.maxLevel && user.repair_num > user.next_level_num) {
                 upgradeUserLevelFunc()
                 who_notify('level up to ' + (user.level + 1))
             }
