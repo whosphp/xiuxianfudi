@@ -152,7 +152,7 @@ let who_interval = setInterval(function () {
 <div id="who_helper">
 <span><strong>Room</strong>: ${roomIndex}</span><br>
 <span><strong>Me</strong>: ${userId}</span><br>
-<span><strong>BattleEnd</strong>: {{ teamBattleEndAt.format('HH:mm:ss') }}</span><br>
+<span v-show="amIINTeam"><strong>BattleEnd</strong>: {{ teamBattleEndAt.format('HH:mm:ss') }}<br></span>
 <label>
     Battle: <span class="text-success">{{ combat_ok_count }}</span> / <span class="text-danger">{{ combat_bad_count }}</span> / <span>{{ combat_total_count }}</span> / <span class="text-warning">{{ combat_success_rate }}</span>
     <button class="btn btn-default btn-xs" type="button" @click="resetCombatCount">Reset</button>
