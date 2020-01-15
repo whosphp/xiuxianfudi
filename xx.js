@@ -129,11 +129,11 @@ let who_interval = setInterval(function () {
     sendToServerBase = function (type, obj) {
         oldSendToServerBase(type, obj)
 
-        // 切换队伍 重置计数
-        who_app.amIINTeam = true
-        who_app.resetCombatCount()
-
         if (type === "applyTeam") {
+            // 切换队伍 重置计数
+            who_app.amIINTeam = true
+            who_app.resetCombatCount()
+
             if (! who_app.latest_join_teams.find(team => team.teamId === obj.teamId && team.pwd === obj.pwd)) {
                 $.ajax({
                     url: "/api/getOtherUserInfo?id=" + obj.teamId,
