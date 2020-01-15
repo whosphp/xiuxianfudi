@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.6.1
+// @version      0.6.2
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -76,6 +76,7 @@ let who_interval = setInterval(function () {
                             }
                             break;
                         case "currentTeamDisband":
+                            who_app.amIINTeam = false
                             // 自己解散队伍时, 不发送通知
                             if (res.data !== $("#userId").val()) {
                                 delete who_teams[res.data]
@@ -90,6 +91,10 @@ let who_interval = setInterval(function () {
                             }
                             break;
                     }
+                })
+
+                socket.on("battleEnd", function (res) {
+                    who_app.teamBattleEndAt = moment()
                 })
 
                 clearInterval(interval)
@@ -125,6 +130,7 @@ let who_interval = setInterval(function () {
         oldSendToServerBase(type, obj)
 
         // 切换队伍 重置计数
+        who_app.amIINTeam = true
         who_app.resetCombatCount()
 
         if (type === "applyTeam") {
@@ -144,8 +150,9 @@ let who_interval = setInterval(function () {
 
     $('.container-fluid > .homediv > div:first-child').append(`
 <div id="who_helper">
-<label>组队大厅: ${roomIndex}</label>
-<label>Me: ${userId}</label>
+<span><strong>Room</strong>: ${roomIndex}</span><br>
+<span><strong>Me</strong>: ${userId}</span><br>
+<span><strong>BattleEnd</strong>: {{ teamBattleEndAt.format('HH:mm:ss') }}</span><br>
 <label>
     Battle: <span class="text-success">{{ combat_ok_count }}</span> / <span class="text-danger">{{ combat_bad_count }}</span> / <span>{{ combat_total_count }}</span> / <span class="text-warning">{{ combat_success_rate }}</span>
     <button class="btn btn-default btn-xs" type="button" @click="resetCombatCount">Reset</button>
@@ -189,6 +196,8 @@ let who_interval = setInterval(function () {
         'el': '#who_helper',
         data: {
             autoFactionTask: false,
+            autoStartPerilTeamFunc: false,
+            amIINTeam: false,
             combat_ok_count: 0,
             combat_bad_count: 0,
             combat_total_count: 0,
@@ -199,7 +208,7 @@ let who_interval = setInterval(function () {
             system: {
                 maxLevel: 89
             },
-            autoStartPerilTeamFunc: false,
+            teamBattleEndAt: moment(),
             userGoodsPages: 1,// 背包物品总页数
             userBaseInfo: {
                 nickname: 'nobody',
@@ -228,6 +237,14 @@ let who_interval = setInterval(function () {
                     }
                 }
             }, 5000)
+
+            setInterval(() => {
+                if (this.amIINTeam) {
+                    if (moment().diff(this.teamBattleEndAt, 'seconds') >= 60) {
+                        who_notify('队长长时间未开始战斗', 1)
+                    }
+                }
+            }, 60000)
         },
         watch: {
             captain(n, o) {
