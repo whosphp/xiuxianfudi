@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.6.2
+// @version      0.6.3
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -32,20 +32,6 @@ let who_interval = setInterval(function () {
 
     console.log(userId, currentLevel)
     clearInterval(who_interval)
-
-    // 只做这些帮派任务
-    let valuedFactionTasks = [
-        "5dca6a232b57001e2bc0273a",
-        "5e13df3496d23f0961a85212",
-        "5dca69c12b57001e2bc02733",
-        "5dca839096003f20fd0df257",
-        "5df337f1b0708370b73f36a3",
-        "5dfc40ff6439e975fbbc6c7b",
-        "5dfa1ad779b2846774bd9f5b",
-        "5e0c2a502837c176c87ba1ef",
-        "5dfec9bc016232536617c314",
-        "5e17f6213ede2d40f654ced5", // 孔雀的羽毛
-    ]
 
     function getKey(key) {
         return userId + ':' + key
@@ -159,7 +145,8 @@ let who_interval = setInterval(function () {
 </label>
 <table class="table table-bordered table-condensed" style="margin-bottom: 5px;">
 <tr>
-    <td>自动帮派任务</td>
+    <td>自动帮派</td>
+    <td>刷金: <button class="btn btn-xs" type="button" @click="focusOnGold = !focusOnGold">{{ focusOnGold ? '✔' : '✘' }}</button></td>
     <td><button class="btn btn-xs" type="button" @click="autoFactionTask = !autoFactionTask">{{ autoFactionTask ? '✔' : '✘' }}</button></td>
 </tr>
 </table>
@@ -202,6 +189,7 @@ let who_interval = setInterval(function () {
             combat_bad_count: 0,
             combat_total_count: 0,
             combat_success_rate: '100.0%',
+            focusOnGold: false,
             captain: GM_getValue(getKey('captain'), ''),
             inTeamPwd: GM_getValue(getKey('inTeamPwd'), ''),
             latest_join_teams: GM_getValue(getKey('latest_join_teams'), []),
@@ -221,7 +209,27 @@ let who_interval = setInterval(function () {
             },
             fb: "",
             fbOptions: [],
-            subscribes: GM_getValue(getKey('subscribes'), [])
+            subscribes: GM_getValue(getKey('subscribes'), []),
+            factionTasks: {
+                // 平衡模式的帮派任务
+                balance: [
+                    "5dca6a232b57001e2bc0273a",
+                    "5e13df3496d23f0961a85212",
+                    "5dca69c12b57001e2bc02733",
+                    "5dca839096003f20fd0df257",
+                    "5df337f1b0708370b73f36a3",
+                    "5dfc40ff6439e975fbbc6c7b",
+                    "5dfa1ad779b2846774bd9f5b",
+                    "5e0c2a502837c176c87ba1ef",
+                    "5dfec9bc016232536617c314",
+                    "5e17f6213ede2d40f654ced5", // 孔雀的羽毛
+                ],
+                // 金币模式的帮派任务
+                gold: [
+                    "5e13df3496d23f0961a85212",// 61 军备库任务
+                    "5e0c2a502837c176c87ba1ef",// 71 军备库任务
+                ]
+            },
         },
         created() {
             this.fb = GM_getValue(getKey('fb'), "5dbfd22d4a3e3d2784a6a670") // 默认是密林
@@ -245,6 +253,11 @@ let who_interval = setInterval(function () {
                     }
                 }
             }, 60000)
+        },
+        computed: {
+            factionTasksWanted() {
+                return this.focusOnGold ? this.factionTasks.gold : this.factionTasks.balance
+            }
         },
         watch: {
             captain(n, o) {
@@ -445,7 +458,7 @@ let who_interval = setInterval(function () {
             let factionTask = res.data.find(datum => datum.task.task_type === 4)
             if (factionTask !== undefined) {
                 if (who_app.autoFactionTask) {
-                    if (valuedFactionTasks.includes(factionTask.task._id)) {
+                    if (who_app.factionTasksWanted.includes(factionTask.task._id)) {
                         setTimeout(function () {
                             payUserTask(factionTask.utid)
                         }, 1000)
@@ -489,6 +502,9 @@ let who_interval = setInterval(function () {
             }
         }
     })
+
+    // 增加重新初始化任务列表按钮 (刷帮派任务可能会遇到503导致任务列表不刷新)
+    $('.username').append(`<button class="btn btn-xs btn-default" onclick="getUserInitInfo()">🔄 ReInit</button>`)
 
     // 进入组队大厅
     $('#fishfarm').click()
