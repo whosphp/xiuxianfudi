@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.5.9
+// @version      0.6
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -15,31 +15,17 @@
 // @require      https://cdn.jsdelivr.net/npm/vue/dist/vue.js
 // @run-at document-end
 // ==/UserScript==
-
-window.addEventListener("contextmenu",
-    function(e){
-        e.stopPropagation()
-    }, true);
-window.addEventListener("selectstart",
-    function(e){
-        e.stopPropagation()
-    }, true);
-window.addEventListener("dragstart",
-    function(e){
-        e.stopPropagation()
-    }, true);
-
 let who_interval = setInterval(function () {
     'use strict';
 
     let userId = $('#userId').val()
     let currentLevel = parseInt($('#current-level').text())
-    if (! userId) {
+    if (!userId) {
         console.log('Can not find user id')
         return;
     }
 
-    if (! currentLevel) {
+    if (!currentLevel) {
         console.log('Can not get user level')
         return;
     }
@@ -134,15 +120,47 @@ let who_interval = setInterval(function () {
         }
     }
 
+    let oldSendToServerBase = sendToServerBase
+    sendToServerBase = function (type, obj) {
+        oldSendToServerBase(type, obj)
+
+        // 切换队伍 重置计数
+        who_app.resetCombatCount()
+
+        if (type === "applyTeam") {
+            if (! who_app.latest_join_teams.find(team => team.teamId === obj.teamId && team.pwd === obj.pwd)) {
+                $.ajax({
+                    url: "/api/getOtherUserInfo?id=" + obj.teamId,
+                    success: function (res) {
+                        obj.captionName = res.data.user.nickname
+                        if (who_app.latest_join_teams.unshift(obj) > 4) {
+                            who_app.latest_join_teams.pop()
+                        }
+                    }
+                })
+            }
+        }
+    }
+
     $('.container-fluid > .homediv > div:first-child').append(`
 <div id="who_helper">
 <label>组队大厅: ${roomIndex}</label>
 <label>Me: ${userId}</label>
-<label>Battle: <span class="text-success">{{ combat_ok_count }}</span> / <span class="text-danger">{{ combat_bad_count }}</span> / <span>{{ combat_total_count }}</span> / <span class="text-warning">{{ combat_success_rate }}</span></label>
+<label>
+    Battle: <span class="text-success">{{ combat_ok_count }}</span> / <span class="text-danger">{{ combat_bad_count }}</span> / <span>{{ combat_total_count }}</span> / <span class="text-warning">{{ combat_success_rate }}</span>
+    <button class="btn btn-default btn-xs" type="button" @click="resetCombatCount">Reset</button>
+</label>
 <table class="table table-bordered table-condensed" style="margin-bottom: 5px;">
 <tr>
     <td>自动帮派任务</td>
     <td><button class="btn btn-xs" type="button" @click="autoFactionTask = !autoFactionTask">{{ autoFactionTask ? '✔' : '✘' }}</button></td>
+</tr>
+</table>
+<table class="table table-bordered table-condensed">
+<tr v-for="team in latest_join_teams">
+    <td>{{ team.captionName }}</td>
+    <td>{{ team.pwd }}</td>
+    <td><button class="btn btn-default btn-xs" type="button" @click="joinLatestJoinTeam(team)">Join</button></td>
 </tr>
 </table>
 <form class="form-inline">
@@ -177,6 +195,7 @@ let who_interval = setInterval(function () {
             combat_success_rate: '100.0%',
             captain: GM_getValue(getKey('captain'), ''),
             inTeamPwd: GM_getValue(getKey('inTeamPwd'), ''),
+            latest_join_teams: GM_getValue(getKey('latest_join_teams'), []),
             system: {
                 maxLevel: 89
             },
@@ -200,7 +219,7 @@ let who_interval = setInterval(function () {
             this.getUserInitInfo()
 
             setInterval(() => {
-                if (typeof(combat_ok_count) !== "undefined" && typeof(combat_bad_count) !== "undefined") {
+                if (typeof (combat_ok_count) !== "undefined" && typeof (combat_bad_count) !== "undefined") {
                     if (combat_ok_count + combat_bad_count > 0) {
                         this.combat_ok_count = combat_ok_count
                         this.combat_bad_count = combat_bad_count
@@ -219,6 +238,9 @@ let who_interval = setInterval(function () {
             },
             fb(n, o) {
                 GM_setValue(getKey('fb'), n)
+            },
+            latest_join_teams(n, o) {
+                GM_setValue(getKey('latest_join_teams'), n)
             }
         },
         methods: {
@@ -239,7 +261,7 @@ let who_interval = setInterval(function () {
                 }
 
                 // 找不到队伍则自动创建队伍
-                if (! applyOrCreate) {
+                if (!applyOrCreate) {
                     return
                 }
 
@@ -281,11 +303,18 @@ let who_interval = setInterval(function () {
                     this.userBaseInfo.nickname = res.data.user.nickname
                 })
             },
+            joinLatestJoinTeam(team) {
+                sendToServerBase("applyTeam", team)
+            },
+            resetCombatCount() {
+                combat_ok_count = 0
+                combat_bad_count = 0
+            },
             setSubscribes() {
                 GM_setValue(getKey('subscribes'), this.subscribes)
             },
             subCheckedClicked(sub) {
-                sub.checked = ! sub.checked
+                sub.checked = !sub.checked
                 this.setSubscribes()
             }
         }
@@ -309,7 +338,8 @@ let who_interval = setInterval(function () {
             method: "POST",
             url: host + "/api/log",
             data: a,
-            onload: function (response) {}
+            onload: function (response) {
+            }
         })
     }
 
@@ -325,7 +355,8 @@ let who_interval = setInterval(function () {
         GM_xmlhttpRequest({
             method: "GET",
             url: url,
-            onload: function (response) {}
+            onload: function (response) {
+            }
         })
     }
 
@@ -453,7 +484,4 @@ let who_interval = setInterval(function () {
     setInterval(function () {
         getUserInfoFunc()
     }, 300000) // 定时更新用户信息
-    setInterval(function () {
-        who_app.getAllUserGoods()
-    }, 60000) // 定时更新背包信息
 }, 500)
