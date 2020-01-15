@@ -427,11 +427,6 @@ let who_interval = setInterval(function () {
 
         if (settings.url.startsWith("/api/getUserInfo")) {
             let user = res.data.user
-            // 50, 60, 70 可能需要主线任务 或者 需要攒经验, 手动升级
-            if (![50, 60, 70].includes(user.level) && user.level < who_app.system.maxLevel && user.repair_num > user.next_level_num) {
-                upgradeUserLevelFunc()
-                who_notify('level up to ' + (user.level + 1))
-            }
 
             // 定时制作物品 消耗精力 防止精力爆炸
             if (user.vitality_num + 5 >= who_app.userBaseInfo['max-vitality-num']) {
