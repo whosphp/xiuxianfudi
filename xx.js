@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.6.7
+// @version      0.6.8
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -210,6 +210,12 @@ let who_interval = setInterval(function () {
             focusOnGold: false,
             captain: GM_getValue(getKey('captain'), ''),
             inTeamPwd: GM_getValue(getKey('inTeamPwd'), ''),
+
+            // 保存定时器的 Id
+            internalIds: {
+                autoBattle: null
+            },
+
             latest_join_teams: GM_getValue(getKey('latest_join_teams'), []),
             longTimeNoBattleNotification: true,
             system: {
@@ -329,14 +335,13 @@ let who_interval = setInterval(function () {
                 }
             },
             autoBattleHandler() {
-                let auto
                 this.autoBattle = ! this.autoBattle
                 if(this.autoBattle){
-                    auto = setInterval(function(){
+                    this.internalIds.autoBattle = setInterval(function(){
                         startPerilTeamFunc();
                     }, this.autoBattleInternalTime*1000)
-                } else if (typeof(auto) !== "undefined") {
-                    clearInterval(auto)
+                } else
+                    clearInterval(this.internalIds.autoBattle)
                 }
             },
             addNewSub() {
