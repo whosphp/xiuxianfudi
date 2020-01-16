@@ -156,7 +156,7 @@ let who_interval = setInterval(function () {
 </tr>
 <tr>
     <td>自动制作</td>
-    <td>防精(活)力满</td>
+    <td>防止活力满</td>
     <td><button class="btn btn-xs" type="button" @click="autoMakeFood = !autoMakeFood">{{ autoMakeFood ? '✔' : '✘' }}</button></td>
 </tr>
 <tr>
@@ -463,14 +463,15 @@ let who_interval = setInterval(function () {
             let user = res.data.user
 
             if (who_app.autoMakeFood) {
-                // 定时制作物品 消耗精力 防止精力爆炸
+                // 定时制作物品 消耗活力
                 if (user.vitality_num + 5 >= who_app.userBaseInfo['max-vitality-num']) {
                     makeLifeGoodsFunc(1)
                 }
+            }
 
-                if (user.energy_num + 5 >= who_app.userBaseInfo['max-energy-num']) {
-                    makeLifeGoodsFunc(2)
-                }
+            // 消耗精力
+            if (user.energy_num + 5 >= who_app.userBaseInfo['max-energy-num']) {
+                makeLifeGoodsFunc(2)
             }
         }
 
