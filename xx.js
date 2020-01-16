@@ -340,7 +340,7 @@ let who_interval = setInterval(function () {
                     this.internalIds.autoBattle = setInterval(function(){
                         startPerilTeamFunc();
                     }, this.autoBattleInternalTime*1000)
-                } else
+                } else {
                     clearInterval(this.internalIds.autoBattle)
                 }
             },
