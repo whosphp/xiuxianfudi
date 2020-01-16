@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.6.4
+// @version      0.6.5
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -154,6 +154,11 @@ let who_interval = setInterval(function () {
     <td>防精(活)力满</td>
     <td><button class="btn btn-xs" type="button" @click="autoMakeFood = !autoMakeFood">{{ autoMakeFood ? '✔' : '✘' }}</button></td>
 </tr>
+<tr>
+    <td>异常提醒</td>
+    <td>长时间未战斗</td>
+    <td><button class="btn btn-xs" type="button" @click="longTimeNoBattleNotification = !longTimeNoBattleNotification">{{ longTimeNoBattleNotification ? '✔' : '✘' }}</button></td>
+</tr>
 </table>
 <table class="table table-bordered table-condensed">
 <tr v-for="team in latest_join_teams">
@@ -199,6 +204,7 @@ let who_interval = setInterval(function () {
             captain: GM_getValue(getKey('captain'), ''),
             inTeamPwd: GM_getValue(getKey('inTeamPwd'), ''),
             latest_join_teams: GM_getValue(getKey('latest_join_teams'), []),
+            longTimeNoBattleNotification: true,
             system: {
                 maxLevel: 89
             },
@@ -254,7 +260,8 @@ let who_interval = setInterval(function () {
 
             setInterval(() => {
                 if (this.amIINTeam) {
-                    if (moment().diff(this.teamBattleEndAt, 'seconds') >= 60) {
+                    if (this.longTimeNoBattleNotification && moment().diff(this.teamBattleEndAt, 'seconds') >= 60) {
+                        this.longTimeNoBattleNotification = false
                         who_notify('队长长时间未开始战斗', 1)
                     }
                 }
