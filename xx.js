@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.6.5
+// @version      0.6.6
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -145,6 +145,11 @@ let who_interval = setInterval(function () {
 </label>
 <table class="table table-bordered table-condensed" style="margin-bottom: 5px;">
 <tr>
+    <td>自动战斗</td>
+    <td><input type="number" v-model="autoBattleInternalTime" placeholder="间隔" style="width: 50px;">秒</td>
+    <td><button class="btn btn-xs" type="button" @click="autoBattleHandler">{{ autoBattle ? '✔' : '✘' }}</button></td>
+</tr>
+<tr>
     <td>自动帮派</td>
     <td>刷金: <button class="btn btn-xs" type="button" @click="focusOnGold = !focusOnGold">{{ focusOnGold ? '✔' : '✘' }}</button></td>
     <td><button class="btn btn-xs" type="button" @click="autoFactionTask = !autoFactionTask">{{ autoFactionTask ? '✔' : '✘' }}</button></td>
@@ -192,6 +197,8 @@ let who_interval = setInterval(function () {
     unsafeWindow.who_app = new Vue({
         'el': '#who_helper',
         data: {
+            autoBattle: false,
+            autoBattleInternalTime: GM_getValue(getKey('autoBattleInternalTime'), 5),
             autoFactionTask: false,
             autoMakeFood: false,
             autoStartPerilTeamFunc: false,
@@ -273,6 +280,9 @@ let who_interval = setInterval(function () {
             }
         },
         watch: {
+            autoBattleInternalTime(n, o) {
+                GM_setValue(getKey('autoBattleInternalTime'), n)
+            },
             captain(n, o) {
                 GM_setValue(getKey('captain'), n)
             },
@@ -316,6 +326,17 @@ let who_interval = setInterval(function () {
                         level: [parseInt(scene.min_level), parseInt(scene.max_level)],
                         pwd: ""
                     })
+                }
+            },
+            autoBattleHandler() {
+                let auto
+                this.autoBattle = ! this.autoBattle
+                if(this.autoBattle){
+                    auto = setInterval(function(){
+                        startPerilTeamFunc();
+                    }, this.autoBattleInternalTime*1000)
+                } else if (typeof(auto) !== "undefined") {
+                    clearInterval(auto)
                 }
             },
             addNewSub() {
