@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.6.3
+// @version      0.6.4
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -149,6 +149,11 @@ let who_interval = setInterval(function () {
     <td>刷金: <button class="btn btn-xs" type="button" @click="focusOnGold = !focusOnGold">{{ focusOnGold ? '✔' : '✘' }}</button></td>
     <td><button class="btn btn-xs" type="button" @click="autoFactionTask = !autoFactionTask">{{ autoFactionTask ? '✔' : '✘' }}</button></td>
 </tr>
+<tr>
+    <td>自动制作</td>
+    <td>防精(活)力满</td>
+    <td><button class="btn btn-xs" type="button" @click="autoMakeFood = !autoMakeFood">{{ autoMakeFood ? '✔' : '✘' }}</button></td>
+</tr>
 </table>
 <table class="table table-bordered table-condensed">
 <tr v-for="team in latest_join_teams">
@@ -183,6 +188,7 @@ let who_interval = setInterval(function () {
         'el': '#who_helper',
         data: {
             autoFactionTask: false,
+            autoMakeFood: false,
             autoStartPerilTeamFunc: false,
             amIINTeam: false,
             combat_ok_count: 0,
@@ -428,13 +434,15 @@ let who_interval = setInterval(function () {
         if (settings.url.startsWith("/api/getUserInfo")) {
             let user = res.data.user
 
-            // 定时制作物品 消耗精力 防止精力爆炸
-            if (user.vitality_num + 5 >= who_app.userBaseInfo['max-vitality-num']) {
-                makeLifeGoodsFunc(1)
-            }
+            if (who_app.autoMakeFood) {
+                // 定时制作物品 消耗精力 防止精力爆炸
+                if (user.vitality_num + 5 >= who_app.userBaseInfo['max-vitality-num']) {
+                    makeLifeGoodsFunc(1)
+                }
 
-            if (user.energy_num + 5 >= who_app.userBaseInfo['max-energy-num']) {
-                makeLifeGoodsFunc(2)
+                if (user.energy_num + 5 >= who_app.userBaseInfo['max-energy-num']) {
+                    makeLifeGoodsFunc(2)
+                }
             }
         }
 
