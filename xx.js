@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.6.11
+// @version      0.6.12
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -185,6 +185,10 @@ let who_interval = setInterval(function () {
     <td><button class="btn btn-xs" type="button" @click="autoMakeFood = !autoMakeFood">{{ autoMakeFood ? '✔' : '✘' }}</button></td>
 </tr>
 <tr>
+    <td colspan="2">自动加入最近的队伍</td>
+    <td><button class="btn btn-xs" type="button" @click="autoJoinLatestJoinTeam = !autoJoinLatestJoinTeam">{{ autoJoinLatestJoinTeam ? '✔' : '✘' }}</button></td>
+</tr>
+<tr>
     <td>异常提醒</td>
     <td>长时间未战斗</td>
     <td><button class="btn btn-xs" type="button" @click="longTimeNoBattleNotification = !longTimeNoBattleNotification">{{ longTimeNoBattleNotification ? '✔' : '✘' }}</button></td>
@@ -228,6 +232,7 @@ let who_interval = setInterval(function () {
             autoBattle: false,
             autoBattleInternalTime: GM_getValue(getKey('autoBattleInternalTime'), 5),
             autoFactionTask: false,
+            autoJoinLatestJoinTeam: GM_getValue(getKey('autoJoinLatestJoinTeam'), false),
             autoMakeFood: false,
             autoStartPerilTeamFunc: false,
             amIINTeam: false,
@@ -321,6 +326,9 @@ let who_interval = setInterval(function () {
         watch: {
             autoBattleInternalTime(n, o) {
                 GM_setValue(getKey('autoBattleInternalTime'), n)
+            },
+            autoJoinLatestJoinTeam(n, o) {
+                GM_setValue(getKey('autoJoinLatestJoinTeam'), n)
             },
             captain(n, o) {
                 GM_setValue(getKey('captain'), n)
@@ -583,16 +591,18 @@ let who_interval = setInterval(function () {
         setTimeout(function () {
             $('a[id="fish-game-btn-c"]')[roomIndex].click()
 
-            let internalTimes = 0
-            let internal = setInterval(function () {
-                if (who_app.amIINTeam || who_app.latest_join_teams.length === 0 || internalTimes > 10) {
-                    clearInterval(internal)
-                } else {
-                    who_app.joinLatestJoinTeam(who_app.latest_join_teams[0])
-                }
+            if (who_app.autoJoinLatestJoinTeam) {
+                let internalTimes = 0
+                let internal = setInterval(function () {
+                    if (who_app.amIINTeam || who_app.latest_join_teams.length === 0 || internalTimes > 10) {
+                        clearInterval(internal)
+                    } else {
+                        who_app.joinLatestJoinTeam(who_app.latest_join_teams[0])
+                    }
 
-                internalTimes++
-            }, 5000)
+                    internalTimes++
+                }, 5000)
+            }
         }, 500)
     }
 
