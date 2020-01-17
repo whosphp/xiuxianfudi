@@ -100,7 +100,7 @@ let who_interval = setInterval(function () {
                             break
                         case "reloadMyTeam":
                             if (who_app.applyTeamSuccessCallback !== null) {
-                                who_app.applyTeamSuccessCallback()
+                                who_app.applyTeamSuccessCallback(res)
                                 who_app.applyTeamSuccessCallback = null
                             }
                             break
@@ -144,9 +144,12 @@ let who_interval = setInterval(function () {
         oldSendToServerBase(type, obj)
 
         if (type === "applyTeam") {
-            who_app.applyTeamSuccessCallback = function () {
+            who_app.applyTeamSuccessCallback = function (res) {
+                let team = res.data
+
                 // 切换队伍 重置计数
                 who_app.amIINTeam = true
+                who_app.amICaptain = team.teamId === userId
                 who_app.resetCombatCount()
 
                 let index = who_app.latest_join_teams.findIndex(team => team.teamId === obj.teamId && team.pwd === obj.pwd)
@@ -178,7 +181,7 @@ let who_interval = setInterval(function () {
     <button class="btn btn-default btn-xs" type="button" @click="resetCombatCount">Reset</button>
 </label>
 <table class="table table-bordered table-condensed" style="margin-bottom: 5px;">
-<tr>
+<tr v-show="amICaptain">
     <td>自动战斗</td>
     <td><input type="number" v-model="autoBattleInternalTime" placeholder="间隔" style="width: 50px;">秒</td>
     <td><button class="btn btn-xs" type="button" @click="autoBattleHandler">{{ autoBattle ? '✔' : '✘' }}</button></td>
@@ -244,6 +247,8 @@ let who_interval = setInterval(function () {
             autoJoinLatestJoinTeam: GM_getValue(getKey('autoJoinLatestJoinTeam'), false),
             autoMakeFood: false,
             autoStartPerilTeamFunc: false,
+
+            amICaptain: false,
             amIINTeam: false,
             combat_ok_count: 0,
             combat_bad_count: 0,
