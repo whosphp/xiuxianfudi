@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.6.12
+// @version      0.6.13
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -13,6 +13,7 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @require      https://cdn.jsdelivr.net/npm/vue/dist/vue.js
+// @require      https://cdn.jsdelivr.net/npm/later@1.2.0/later.min.js
 // @run-at document-end
 // ==/UserScript==
 let who_interval = setInterval(function () {
@@ -32,19 +33,19 @@ let who_interval = setInterval(function () {
 
     let online = false // 是否依赖 xx.gl.test
     var host = 'http://xx.gl.test'
-    // 轮询
 
     if (online) {
-        setInterval(function () {
-            GM_xmlhttpRequest({
-                method: "GET",
-                headers: {"Accept": "application/json"},
-                url: host + '/api/events?uuid=' + userId,
-                onload: function (res) {
-                    let events = JSON.parse(res.responseText)
-                }
-            })
-        }, 3000)
+        // // 轮询
+        // setInterval(function () {
+        //     GM_xmlhttpRequest({
+        //         method: "GET",
+        //         headers: {"Accept": "application/json"},
+        //         url: host + '/api/events?uuid=' + userId,
+        //         onload: function (res) {
+        //             let events = JSON.parse(res.responseText)
+        //         }
+        //     })
+        // }, 3000)
     }
 
     console.log(userId, currentLevel)
@@ -80,10 +81,14 @@ let who_interval = setInterval(function () {
                             break
                         case "currentTeamDisband":
                             who_app.amIINTeam = false
+
                             // 自己解散队伍时, 不发送通知
                             if (res.data !== $("#userId").val()) {
                                 delete who_teams[res.data]
-                                who_notify('队伍解散', 1)
+                                who_notify('队伍解散重连中...', 1)
+                                tryToReJoinLatestTeam(5, 100, true)
+                            } else {
+                                tryToReJoinLatestTeam(5, 100, false)
                             }
                             break
                         case "listTeamDisband":
@@ -597,19 +602,29 @@ let who_interval = setInterval(function () {
         setTimeout(function () {
             $('a[id="fish-game-btn-c"]')[roomIndex].click()
 
-            if (who_app.autoJoinLatestJoinTeam) {
-                let internalTimes = 0
-                let internal = setInterval(function () {
-                    if (who_app.amIINTeam || who_app.latest_join_teams.length === 0 || internalTimes > 10) {
-                        clearInterval(internal)
-                    } else {
-                        who_app.joinLatestJoinTeam(who_app.latest_join_teams[0])
-                    }
-
-                    internalTimes++
-                }, 5000)
-            }
+            tryToReJoinLatestTeam(3, 20, false)
         }, 500)
+    }
+
+    function tryToReJoinLatestTeam(internalSecond, maxTryTimes, shouldNotify) {
+        if (who_app.autoJoinLatestJoinTeam) {
+            let internalTimes = 0
+            let internal = setInterval(function () {
+                if (who_app.amIINTeam) {
+                    clearInterval(internal)
+                    if (shouldNotify) who_notify('重连成功...', 1)
+                } else if (who_app.latest_join_teams.length === 0) {
+                    clearInterval(internal)
+                } else if (internalTimes > maxTryTimes) {
+                    clearInterval(internal)
+                    if (shouldNotify) who_notify('重连失败...', 1)
+                } else {
+                    who_app.joinLatestJoinTeam(who_app.latest_join_teams[0])
+                }
+
+                internalTimes++
+            }, internalSecond*1000)
+        }
     }
 
     setInterval(function () {
