@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.6.10
+// @version      0.6.11
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -582,6 +582,17 @@ let who_interval = setInterval(function () {
     if (roomIndex !== 'unset') {
         setTimeout(function () {
             $('a[id="fish-game-btn-c"]')[roomIndex].click()
+
+            let internalTimes = 0
+            let internal = setInterval(function () {
+                if (who_app.amIINTeam || who_app.latest_join_teams.length === 0 || internalTimes > 10) {
+                    clearInterval(internal)
+                } else {
+                    who_app.joinLatestJoinTeam(who_app.latest_join_teams[0])
+                }
+
+                internalTimes++
+            }, 5000)
         }, 500)
     }
 
