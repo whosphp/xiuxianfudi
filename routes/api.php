@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 |
 */
 
+Route::get('events', 'EventsController@index');
+
 Route::resource('users', 'UsersController');
 Route::get('getFactionTasksValued', 'ApiController@getFactionTasksValued');
 Route::get('getUserInfo/{name}', 'ApiController@getUserInfo');

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.6.8
+// @version      0.6.9
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -29,6 +29,19 @@ let who_interval = setInterval(function () {
         console.log('Can not get user level')
         return;
     }
+
+    var host = 'http://xx.gl.test'
+    // 轮询
+    setInterval(function () {
+        GM_xmlhttpRequest({
+            method: "GET",
+            headers: {"Accept": "application/json"},
+            url: host + '/api/events?uuid=' + userId,
+            onload: function (res) {
+                let events = JSON.parse(res.responseText)
+            }
+        })
+    }, 3000)
 
     console.log(userId, currentLevel)
     clearInterval(who_interval)
@@ -150,7 +163,7 @@ let who_interval = setInterval(function () {
     <td><button class="btn btn-xs" type="button" @click="autoBattleHandler">{{ autoBattle ? '✔' : '✘' }}</button></td>
 </tr>
 <tr>
-    <td>自动帮派</td>
+    <td>自动帮派(<span class="text-success">{{ factionTaskOkCount }}</span>/<span class="text-danger">{{ factionTaskBadCount }}</span>/{{ factionTaskTotalCount }})</td>
     <td>刷金: <button class="btn btn-xs" type="button" @click="focusOnGold = !focusOnGold">{{ focusOnGold ? '✔' : '✘' }}</button></td>
     <td><button class="btn btn-xs" type="button" @click="autoFactionTask = !autoFactionTask">{{ autoFactionTask ? '✔' : '✘' }}</button></td>
 </tr>
@@ -208,6 +221,11 @@ let who_interval = setInterval(function () {
             combat_total_count: 0,
             combat_success_rate: '100.0%',
             focusOnGold: false,
+
+            factionTaskOkCount: 0,
+            factionTaskBadCount: 0,
+            factionTaskTotalCount: 0,
+
             captain: GM_getValue(getKey('captain'), ''),
             inTeamPwd: GM_getValue(getKey('inTeamPwd'), ''),
 
@@ -389,8 +407,6 @@ let who_interval = setInterval(function () {
         }
     })
 
-    var host = 'http://xx.gl.test'
-
     function who_log_success(msg) {
         console.debug('%c' + msg, 'color: green; font-size: 16px;')
     }
@@ -494,6 +510,7 @@ let who_interval = setInterval(function () {
         if (settings.url.startsWith("/api/getUserTask")) {
             let factionTask = res.data.find(datum => datum.task.task_type === 4)
             if (factionTask !== undefined) {
+                who_app.factionTaskTotalCount++
                 if (who_app.autoFactionTask) {
                     if (who_app.factionTasksWanted.includes(factionTask.task._id)) {
                         setTimeout(function () {
@@ -517,6 +534,7 @@ let who_interval = setInterval(function () {
 
         if (settings.url.startsWith("/api/payUserTask")) {
             if (res.code == 200) {
+                who_app.factionTaskOkCount++
                 if (who_app.autoFactionTask) {
                     setTimeout(function () {
                         getFationTaskFunc()
@@ -529,6 +547,7 @@ let who_interval = setInterval(function () {
 
         if (settings.url.startsWith("/api/closeUserTask")) {
             if (res.code == 200) {
+                who_app.factionTaskBadCount++
                 if (who_app.autoFactionTask) {
                     setTimeout(function () {
                         getFationTaskFunc()
