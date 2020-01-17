@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.6.9
+// @version      0.6.10
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -73,7 +73,7 @@ let who_interval = setInterval(function () {
                             if (res.msg.includes('已达上限')) {
                                 who_notify(res.msg)
                             }
-                            break;
+                            break
                         case "currentTeamDisband":
                             who_app.amIINTeam = false
                             // 自己解散队伍时, 不发送通知
@@ -81,14 +81,20 @@ let who_interval = setInterval(function () {
                                 delete who_teams[res.data]
                                 who_notify('队伍解散', 1)
                             }
-                            break;
+                            break
                         case "listTeamDisband":
                             if (typeof res.data == "string") {
                                 delete who_teams[res.data]
                             } else {
                                 delete who_teams[res.data.teamId]
                             }
-                            break;
+                            break
+                        case "reloadMyTeam":
+                            if (who_app.applyTeamSuccessCallback !== null) {
+                                who_app.applyTeamSuccessCallback()
+                                who_app.applyTeamSuccessCallback = null
+                            }
+                            break
                     }
                 })
 
@@ -129,20 +135,26 @@ let who_interval = setInterval(function () {
         oldSendToServerBase(type, obj)
 
         if (type === "applyTeam") {
-            // 切换队伍 重置计数
-            who_app.amIINTeam = true
-            who_app.resetCombatCount()
+            who_app.applyTeamSuccessCallback = function () {
+                // 切换队伍 重置计数
+                who_app.amIINTeam = true
+                who_app.resetCombatCount()
 
-            if (! who_app.latest_join_teams.find(team => team.teamId === obj.teamId && team.pwd === obj.pwd)) {
-                $.ajax({
-                    url: "/api/getOtherUserInfo?id=" + obj.teamId,
-                    success: function (res) {
-                        obj.captionName = res.data.user.nickname
-                        if (who_app.latest_join_teams.unshift(obj) > 4) {
-                            who_app.latest_join_teams.pop()
+                let index = who_app.latest_join_teams.findIndex(team => team.teamId === obj.teamId && team.pwd === obj.pwd)
+                if (index !== -1) {
+                    who_app.latest_join_teams.splice(index, 1)
+
+                    $.ajax({
+                        url: "/api/getOtherUserInfo?id=" + obj.teamId,
+                        success: function (res) {
+                            obj.captionName = res.data.user.nickname
+                            obj.joinInAt = moment().format('HH:mm:ss')
+                            if (who_app.latest_join_teams.unshift(obj) > 4) {
+                                who_app.latest_join_teams.pop()
+                            }
                         }
-                    }
-                })
+                    })
+                }
             }
         }
     }
@@ -182,6 +194,7 @@ let who_interval = setInterval(function () {
 <tr v-for="team in latest_join_teams">
     <td>{{ team.captionName }}</td>
     <td>{{ team.pwd }}</td>
+    <td>{{ team.joinInAt }}</td>
     <td><button class="btn btn-default btn-xs" type="button" @click="joinLatestJoinTeam(team)">Join</button></td>
 </tr>
 </table>
@@ -210,6 +223,8 @@ let who_interval = setInterval(function () {
     unsafeWindow.who_app = new Vue({
         'el': '#who_helper',
         data: {
+            applyTeamSuccessCallback: null,
+
             autoBattle: false,
             autoBattleInternalTime: GM_getValue(getKey('autoBattleInternalTime'), 5),
             autoFactionTask: false,
