@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.6.13
+// @version      0.6.14
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -67,7 +67,6 @@ let who_interval = setInterval(function () {
             } else if (socket.connected) {
                 socket.off('disconnect')
                 socket.on('disconnect', function () {
-                    who_log_warning('disconnect')
                     who_notify('disconnect', 1)
                 })
 
@@ -100,7 +99,7 @@ let who_interval = setInterval(function () {
                             break
                         case "reloadMyTeam":
                             if (who_app.applyTeamSuccessCallback !== null) {
-                                who_app.applyTeamSuccessCallback(res)
+                                who_app.applyTeamSuccessCallback()
                                 who_app.applyTeamSuccessCallback = null
                             }
                             break
@@ -129,9 +128,14 @@ let who_interval = setInterval(function () {
             let item = obj.data
             who_teams[item.teamId] = item
 
+            who_app.amICaptain = item.teamId === userId
+
             // 如果自己是队长 则自动开始循环战斗
-            if (item.teamId === $("#userId").val() && who_app.autoStartPerilTeamFunc) {
-                startPerilTeamFunc(2)
+            if (item.teamId === userId && who_app.autoStartPerilTeamFunc) {
+
+                who_app.autoBattle = false
+                who_app.autoBattleHandler()
+
                 who_app.autoStartPerilTeamFunc = false
             }
         } else if (type == 3) { // 刷新我得队伍
@@ -144,12 +148,9 @@ let who_interval = setInterval(function () {
         oldSendToServerBase(type, obj)
 
         if (type === "applyTeam") {
-            who_app.applyTeamSuccessCallback = function (res) {
-                let team = res.data
-
+            who_app.applyTeamSuccessCallback = function () {
                 // 切换队伍 重置计数
                 who_app.amIINTeam = true
-                who_app.amICaptain = team.teamId === userId
                 who_app.resetCombatCount()
 
                 let index = who_app.latest_join_teams.findIndex(team => team.teamId === obj.teamId && team.pwd === obj.pwd)
@@ -215,21 +216,14 @@ let who_interval = setInterval(function () {
 </tr>
 </table>
 <form class="form-inline">
-    <div style="margin-bottom: 5px">
-        <div class="form-group form-group-sm">
-            <input type="text" v-model="captain" placeholder="队长" class="form-control input-sm" style="width: 120px;">
-        </div>
-        <div class="form-group form-group-sm">
-            <input type="text" v-model="inTeamPwd" placeholder="密码" class="form-control input-sm" style="width: 50px;">
-        </div>
-        <button class="btn btn-success btn-xs" type="button" @click="applyTeam">加入</button>
-    </div>
     <div class="form-group form-group-sm">
         <select class="form-control" v-model="fb">
             <option v-for="option in fbOptions" :value="option._id">{{ option.name }}</option>
         </select>
     </div>
     <button class="btn btn-success btn-xs" type="button" @click="autoApplyTeam(false)" title="ApplyTeam">A</button>
+    <button class="btn btn-success btn-xs" type="button" @click="createTeam(false)" title="CreateTeam">C</button>
+    <button class="btn btn-success btn-xs" type="button" @click="createTeam(true)" title="CreateTeam+AutoStart">CS</button>
     <button class="btn btn-success btn-xs" type="button" @click="autoApplyTeam(true)" title="ApplyOrCreateTeam">AC</button>
     <button class="btn btn-success btn-xs" type="button" @click="autoApplyTeam(true, true)" title="ApplyOrCreateTeam+AutoStart">ACS</button>
 </form>
@@ -259,9 +253,6 @@ let who_interval = setInterval(function () {
             factionTaskOkCount: 0,
             factionTaskBadCount: 0,
             factionTaskTotalCount: 0,
-
-            captain: GM_getValue(getKey('captain'), ''),
-            inTeamPwd: GM_getValue(getKey('inTeamPwd'), ''),
 
             // 保存定时器的 Id
             internalIds: {
@@ -381,7 +372,7 @@ let who_interval = setInterval(function () {
 
                 let scene = this.fbOptions.find(item => item._id === this.fb)
                 if (scene !== undefined) {
-                    this.autoStartPerilTeamFunc = !!autoStartPerilTeamFunc
+                    this.autoStartPerilTeamFunc = autoStartPerilTeamFunc
                     sendToServerBase("createdTeam", {
                         teamScenesId: scene._id,
                         level: [parseInt(scene.min_level), parseInt(scene.max_level)],
@@ -406,10 +397,15 @@ let who_interval = setInterval(function () {
                     goodsNum: this.form.goodsNum,
                 })
             },
-            applyTeam() {
-                if (this.captain) {
-                    $('#inTeamPwd').val('651')
-                    applyTeamFunc(this.captain, true)
+            createTeam(autoStart) {
+                let scene = this.fbOptions.find(item => item._id === this.fb)
+                if (scene !== undefined) {
+                    this.autoStartPerilTeamFunc = autoStart
+                    sendToServerBase("createdTeam", {
+                        teamScenesId: scene._id,
+                        level: [parseInt(scene.min_level), parseInt(scene.max_level)],
+                        pwd: "651"
+                    })
                 }
             },
             getAllUserGoods() {
