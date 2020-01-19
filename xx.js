@@ -31,7 +31,7 @@ let who_interval = setInterval(function () {
         return;
     }
 
-    let online = false // 是否依赖 xx.gl.test
+    let online = true // 是否依赖 xx.gl.test
     var host = 'http://xx.gl.test'
 
     if (online) {
