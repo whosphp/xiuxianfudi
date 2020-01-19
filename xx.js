@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.6.14
+// @version      0.6.15
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -156,18 +156,18 @@ let who_interval = setInterval(function () {
                 let index = who_app.latest_join_teams.findIndex(team => team.teamId === obj.teamId && team.pwd === obj.pwd)
                 if (index !== -1) {
                     who_app.latest_join_teams.splice(index, 1)
-
-                    $.ajax({
-                        url: "/api/getOtherUserInfo?id=" + obj.teamId,
-                        success: function (res) {
-                            obj.captionName = res.data.user.nickname
-                            obj.joinInAt = moment().format('HH:mm:ss')
-                            if (who_app.latest_join_teams.unshift(obj) > 4) {
-                                who_app.latest_join_teams.pop()
-                            }
-                        }
-                    })
                 }
+
+                $.ajax({
+                    url: "/api/getOtherUserInfo?id=" + obj.teamId,
+                    success: function (res) {
+                        obj.captionName = res.data.user.nickname
+                        obj.joinInAt = moment().format('HH:mm:ss')
+                        if (who_app.latest_join_teams.unshift(obj) > 4) {
+                            who_app.latest_join_teams.pop()
+                        }
+                    }
+                })
             }
         }
     }
