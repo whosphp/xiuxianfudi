@@ -128,15 +128,15 @@ let who_interval = setInterval(function () {
             let item = obj.data
             who_teams[item.teamId] = item
 
-            who_app.amICaptain = item.teamId === userId
+            if (item.teamId === userId) {
+                who_app.amICaptain = true
 
-            // 如果自己是队长 则自动开始循环战斗
-            if (item.teamId === userId && who_app.autoStartPerilTeamFunc) {
-
-                who_app.autoBattle = false
-                who_app.autoBattleHandler()
-
-                who_app.autoStartPerilTeamFunc = false
+                // 是否自动开始循环战斗
+                if (who_app.autoStartPerilTeamFunc) {
+                    who_app.autoBattle = false
+                    who_app.autoBattleHandler()
+                    who_app.autoStartPerilTeamFunc = false
+                }
             }
         } else if (type == 3) { // 刷新我得队伍
             who_teams[obj.data.teamId] = obj.data
