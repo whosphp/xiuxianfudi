@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.6.15
+// @version      0.7
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -12,6 +12,10 @@
 // @grant        GM_notification
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @grant        GM_getTab
+// @grant        GM_saveTab
+// @grant        GM_getTabs
+// @grant        GM_addValueChangeListener
 // @require      https://cdn.jsdelivr.net/npm/vue/dist/vue.js
 // @require      https://cdn.jsdelivr.net/npm/later@1.2.0/later.min.js
 // @run-at document-end
@@ -185,26 +189,38 @@ let who_interval = setInterval(function () {
 <tr v-show="amICaptain">
     <td>自动战斗</td>
     <td><input type="number" v-model="autoBattleInternalTime" placeholder="间隔" style="width: 50px;">秒</td>
-    <td><button class="btn btn-xs" type="button" @click="autoBattleHandler">{{ autoBattle ? '✔' : '✘' }}</button></td>
+    <td><button class="btn btn-default btn-xs" type="button" @click="autoBattleHandler">{{ autoBattle ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
-    <td>自动帮派(<span class="text-success">{{ factionTaskOkCount }}</span>/<span class="text-danger">{{ factionTaskBadCount }}</span>/{{ factionTaskTotalCount }})</td>
-    <td>刷金: <button class="btn btn-xs" type="button" @click="focusOnGold = !focusOnGold">{{ focusOnGold ? '✔' : '✘' }}</button></td>
-    <td><button class="btn btn-xs" type="button" @click="autoFactionTask = !autoFactionTask">{{ autoFactionTask ? '✔' : '✘' }}</button></td>
+    <td colspan="2">isMaster(只能有一个主, 用来任务调度, 控制其他标签小号的帮派任务)</td>
+    <td><button class="btn btn-default btn-xs" type="button" @click="isMaster = !isMaster">{{ isMaster ? 'On' : 'Off' }}</button></td>
+</tr>
+<tr>
+    <td rowspan="3" style="vertical-align: middle;">自动帮派</td>
+    <td><span class="text-success">{{ factionTaskOkCount }}</span>/<span class="text-danger">{{ factionTaskBadCount }}</span>/{{ factionTaskTotalCount }}</td>
+    <td><button class="btn btn-default btn-xs" type="button" @click="autoFactionTask = !autoFactionTask">{{ autoFactionTask ? 'On' : 'Off' }}</button></td>
+</tr>
+<tr>
+    <td>刷金</td>
+    <td><button class="btn btn-default btn-xs" type="button" @click="focusOnGold = !focusOnGold">{{ focusOnGold ? 'On' : 'Off' }}</button></td>
+</tr>
+<tr>
+    <td>大于5000K自动凝元</td>
+    <td><button class="btn btn-default btn-xs" type="button" @click="autoPolyLin = !autoPolyLin">{{ autoPolyLin ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td>自动制作</td>
     <td>防止活力满</td>
-    <td><button class="btn btn-xs" type="button" @click="autoMakeFood = !autoMakeFood">{{ autoMakeFood ? '✔' : '✘' }}</button></td>
+    <td><button class="btn btn-default btn-xs" type="button" @click="autoMakeFood = !autoMakeFood">{{ autoMakeFood ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td colspan="2">自动加入最近的队伍</td>
-    <td><button class="btn btn-xs" type="button" @click="autoJoinLatestJoinTeam = !autoJoinLatestJoinTeam">{{ autoJoinLatestJoinTeam ? '✔' : '✘' }}</button></td>
+    <td><button class="btn btn-default btn-xs" type="button" @click="autoJoinLatestJoinTeam = !autoJoinLatestJoinTeam">{{ autoJoinLatestJoinTeam ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td>异常提醒</td>
     <td>长时间未战斗</td>
-    <td><button class="btn btn-xs" type="button" @click="longTimeNoBattleNotification = !longTimeNoBattleNotification">{{ longTimeNoBattleNotification ? '✔' : '✘' }}</button></td>
+    <td><button class="btn btn-default btn-xs" type="button" @click="longTimeNoBattleNotification = !longTimeNoBattleNotification">{{ longTimeNoBattleNotification ? 'On' : 'Off' }}</button></td>
 </tr>
 </table>
 <table class="table table-bordered table-condensed">
@@ -237,7 +253,12 @@ let who_interval = setInterval(function () {
 
             autoBattle: false,
             autoBattleInternalTime: GM_getValue(getKey('autoBattleInternalTime'), 5),
-            autoFactionTask: false,
+
+            latestGotFactionTaskAt: '',
+            autoFactionTask: GM_getValue(getKey('autoFactionTask'), false),
+            autoPolyLin: GM_getValue(getKey('autoPolyLin'), false),
+            focusOnGold: GM_getValue(getKey('focusOnGold'), false),
+
             autoJoinLatestJoinTeam: GM_getValue(getKey('autoJoinLatestJoinTeam'), false),
             autoMakeFood: false,
             autoStartPerilTeamFunc: false,
@@ -248,7 +269,6 @@ let who_interval = setInterval(function () {
             combat_bad_count: 0,
             combat_total_count: 0,
             combat_success_rate: '100.0%',
-            focusOnGold: false,
 
             factionTaskOkCount: 0,
             factionTaskBadCount: 0,
@@ -259,12 +279,17 @@ let who_interval = setInterval(function () {
                 autoBattle: null
             },
 
+            isMaster: GM_getValue(getKey('isMaster'), false),
+
             latest_join_teams: GM_getValue(getKey('latest_join_teams'), []),
             longTimeNoBattleNotification: true,
             system: {
                 maxLevel: 89
             },
             teamBattleEndAt: moment(),
+
+            tabId: 0,
+
             userGoodsPages: 1,// 背包物品总页数
             userBaseInfo: {
                 nickname: 'nobody',
@@ -331,11 +356,23 @@ let who_interval = setInterval(function () {
             autoBattleInternalTime(n, o) {
                 GM_setValue(getKey('autoBattleInternalTime'), n)
             },
+            autoFactionTask(n, o) {
+                GM_setValue(getKey('autoFactionTask'), n)
+            },
+            autoPolyLin(n, o) {
+                GM_setValue(getKey('autoPolyLin'), n)
+            },
             autoJoinLatestJoinTeam(n, o) {
                 GM_setValue(getKey('autoJoinLatestJoinTeam'), n)
             },
             captain(n, o) {
                 GM_setValue(getKey('captain'), n)
+            },
+            focusOnGold(n, o) {
+                GM_setValue(getKey('focusOnGold'), n)
+            },
+            isMaster(n, o) {
+                GM_setValue(getKey('isMaster'), n)
             },
             inTeamPwd(n, o) {
                 GM_setValue(getKey('inTeamPwd'), n)
@@ -518,6 +555,25 @@ let who_interval = setInterval(function () {
             ].concat(res.data.combatList)
         }
 
+        if (settings.url.startsWith("/api/getFationTask")) {
+            if (res.code != 200) {
+                if (res.msg === '少侠，请先完成当前任务再来领取~') {
+                    if (who_app.autoFactionTask) {
+                        who_app.latestGotFactionTaskAt = moment()
+                        setTimeout(function () {
+                            getUserTaskFunc()
+                        }, 1000)
+                    }
+                } else if (res.msg === '少侠，当日已领取100个任务~') {
+                    if (who_app.autoFactionTask) {
+                        who_app.latestGotFactionTaskAt = moment()
+                        GM_setValue(who_app.tabId + ':taskStatus', 'complete')
+                    }
+                }
+            }
+        }
+
+
         if (settings.url.startsWith("/api/getUserTask")) {
             let factionTask = res.data.find(datum => datum.task.task_type === 4)
             if (factionTask !== undefined) {
@@ -553,6 +609,9 @@ let who_interval = setInterval(function () {
                 }
             } else {
                 who_notify(res.msg)
+                if (who_app.autoFactionTask) {
+                    GM_setValue(who_app.tabId + ':taskStatus', 'undone')
+                }
             }
         }
 
@@ -566,6 +625,16 @@ let who_interval = setInterval(function () {
                 }
             } else {
                 who_notify(res.msg)
+                if (who_app.autoFactionTask) {
+                    GM_setValue(who_app.tabId + ':taskStatus', 'undone')
+
+                    if (res.msg === '活力不足5点，无法放弃任务~' && who_app.autoPolyLin) {
+                        // 祈福灵大于 5000k 且精力不足时自动凝元
+                        if (parseInt($('#qilin-val').val()) > 5000000) {
+                            polyLinFunc(2)
+                        }
+                    }
+                }
             }
         }
     })
@@ -625,6 +694,85 @@ let who_interval = setInterval(function () {
             }, internalSecond*1000)
         }
     }
+
+    // 暴露接口 方便调试
+    unsafeWindow.GM_getValue = GM_getValue;
+    unsafeWindow.GM_setValue = GM_setValue;
+    unsafeWindow.GM_getTab = GM_getTab;
+    unsafeWindow.GM_saveTab = GM_saveTab;
+    unsafeWindow.GM_getTabs = GM_getTabs;
+
+    // Client 初始化
+    GM_getTab(function (tab) {
+        tab.rand = Math.random();
+        tab.task = {
+            status: 'pending' // running done undone pending
+        }
+        GM_saveTab(tab)
+
+        GM_getTabs(function (tabs) {
+            for (let i in tabs) {
+                if (tabs[i].rand === tab.rand) {
+                    who_app.tabId = i
+                    GM_setValue(i + ':taskStatus', tab.task.status)
+
+                    GM_addValueChangeListener(i + ':taskStatus', function (name, old_value, new_value, remote) {
+                        tab.task.status = new_value
+                        GM_saveTab(tab)
+                    })
+                }
+            }
+        });
+    })
+
+    if (who_app.isMaster) {
+        // Master 初始化
+        setInterval(function () {
+            GM_getTabs(function (tabs) {
+                let isThereTabRunning = Object.values(tabs).find(function (tab) {
+                    if (tab.hasOwnProperty('task') && tab.task.status === 'running') {
+                        return true
+                    } else {
+                        return false
+                    }
+                })
+
+                if (! isThereTabRunning) {
+                    let p = ['pending', 'undone']
+                    for (let index = 0; index < p.length; index++) {
+                        for (let i in tabs) {
+                            let tab = tabs[i]
+                            if (tab.hasOwnProperty('task') && tab.task.status === p[index]) {
+                                GM_setValue(i + ':taskStatus', 'running')
+                                return
+                            }
+                        }
+                    }
+                }
+            })
+        }, 5000)
+    }
+
+    // 五分钟检查一次帮派任务
+    later.setInterval(function () {
+        if (! who_app.autoFactionTask) {
+            return
+        }
+
+        GM_getTab(function (tab) {
+            if (tab.task.status === 'running') {
+                if (who_app.latestGotFactionTaskAt === '' || moment().diff(who_app.latestGotFactionTaskAt, 'seconds') >= 60) {
+                    // 防止重复执行
+                    getFationTaskFunc()
+                }
+            }
+        })
+    }, later.parse.cron('5/* * * * *'))
+
+    // 每天9点3分 初始化任务状态
+    later.setInterval(function () {
+        GM_setValue(i + ':taskStatus', 'pending')
+    }, later.parse.cron('3 9 * * *'))
 
     setInterval(function () {
         getUserInfoFunc()
