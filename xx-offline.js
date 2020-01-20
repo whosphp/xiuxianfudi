@@ -277,7 +277,6 @@ let who_interval = setInterval(function () {
             },
             fb: "",
             fbOptions: [],
-            subscribes: GM_getValue(getKey('subscribes'), []),
             factionTasks: {
                 // 平衡模式的帮派任务
                 balance: [
@@ -390,13 +389,6 @@ let who_interval = setInterval(function () {
                     clearInterval(this.internalIds.autoBattle)
                 }
             },
-            addNewSub() {
-                this.subscribes.push({
-                    checked: true,
-                    goodsName: this.form.goodsName,
-                    goodsNum: this.form.goodsNum,
-                })
-            },
             createTeam(autoStart) {
                 let scene = this.fbOptions.find(item => item._id === this.fb)
                 if (scene !== undefined) {
@@ -410,7 +402,9 @@ let who_interval = setInterval(function () {
             },
             getAllUserGoods() {
                 for (let i = 1; i <= this.userGoodsPages; i++) {
-                    $.get('/api/getUserGoods', {page: i})
+                    setTimeout(function () {
+                        $.get('/api/getUserGoods', {page: i})
+                    }, i * 1500)
                 }
             },
             getUserInitInfo() {
@@ -430,13 +424,6 @@ let who_interval = setInterval(function () {
                 combat_ok_count = 0
                 combat_bad_count = 0
             },
-            setSubscribes() {
-                GM_setValue(getKey('subscribes'), this.subscribes)
-            },
-            subCheckedClicked(sub) {
-                sub.checked = !sub.checked
-                this.setSubscribes()
-            }
         }
     })
 
@@ -480,14 +467,6 @@ let who_interval = setInterval(function () {
         }
     }
 
-    function who_check_goods(datum, subscribe) {
-        if (datum.goods && datum.goods.name == subscribe.goodsName && datum.count >= subscribe.goodsNum) {
-            return true;
-        }
-
-        return false;
-    }
-
     $(document).ajaxComplete(function (event, xhr, settings) {
         let res = xhr.responseJSON
 
@@ -504,14 +483,11 @@ let who_interval = setInterval(function () {
         if (settings.url.startsWith("/api/getUserGoods")) {
             who_app.userGoodsPages = res.pages
             res.data.map(datum => {
-                who_app.subscribes.map(sub => {
-                    if (sub.checked && who_check_goods(datum, sub)) {
-                        who_log_success(sub.goodsName + '数量达成目标')
-                        who_notify(sub.goodsName + '数量达成目标')
-                        sub.checked = false;
-                        who_app.setSubscribes()
+                if (datum.goods) {
+                    if (datum.goods.name === '红药水') {
+                        useGoodsToUser(datum._id)
                     }
-                })
+                }
             })
         }
 
@@ -607,6 +583,28 @@ let who_interval = setInterval(function () {
         }, 500)
     }
 
+    function runFunctionWithSpecificTimesInternal(times, seconds, callback) {
+        for (let i = 0; i < times; i++) {
+            setTimeout(function () {
+                callback()
+            }, i*seconds*1000)
+        }
+    }
+
+    // 吃红药水
+    function useGoodsToUser(id) {
+        fetch("http://joucks.cn:3344/api/useGoodsToUser", {
+            credentials: "include",
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
+            },
+            body: 'ugid=' + id
+        }).then(function (response) {
+        }).then(function () {
+        })
+    }
+
     function tryToReJoinLatestTeam(internalSecond, maxTryTimes, shouldNotify) {
         if (who_app.autoJoinLatestJoinTeam) {
             let internalTimes = 0
@@ -631,4 +629,7 @@ let who_interval = setInterval(function () {
     setInterval(function () {
         getUserInfoFunc()
     }, 300000) // 定时更新用户信息
+    setInterval(function () {
+        who_app.getAllUserGoods()
+    }, 600000) // 定时获取所有背包
 }, 500)
