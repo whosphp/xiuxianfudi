@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.7
+// @version      0.7.1
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -599,6 +599,7 @@ let who_interval = setInterval(function () {
             if (res.code == 200) {
                 who_app.factionTaskOkCount++
                 if (who_app.autoFactionTask) {
+                    GM_setValue(who_app.tabId + ':taskStatus', 'running')
                     setTimeout(function () {
                         getFationTaskFunc()
                     }, 1000)
@@ -622,13 +623,16 @@ let who_interval = setInterval(function () {
             } else {
                 who_notify(res.msg)
                 if (who_app.autoFactionTask) {
-                    GM_setValue(who_app.tabId + ':taskStatus', 'undone')
-
                     if (res.msg === '活力不足5点，无法放弃任务~' && who_app.autoPolyLin) {
                         // 祈福灵大于 5000k 且精力不足时自动凝元
                         if (parseInt($('#qilin-val').val()) > 5000000) {
                             polyLinFunc(2)
+                            GM_setValue(who_app.tabId + ':taskStatus', 'pending')
+                        } else {
+                            GM_setValue(who_app.tabId + ':taskStatus', 'undone')
                         }
+                    } else {
+                        GM_setValue(who_app.tabId + ':taskStatus', 'undone')
                     }
                 }
             }
