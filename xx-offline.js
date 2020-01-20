@@ -185,26 +185,26 @@ let who_interval = setInterval(function () {
 <tr v-show="amICaptain">
     <td>自动战斗</td>
     <td><input type="number" v-model="autoBattleInternalTime" placeholder="间隔" style="width: 50px;">秒</td>
-    <td><button class="btn btn-xs" type="button" @click="autoBattleHandler">{{ autoBattle ? '✔' : '✘' }}</button></td>
+    <td><button class="btn btn-default btn-xs" type="button" @click="autoBattleHandler">{{ autoBattle ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td>自动帮派(<span class="text-success">{{ factionTaskOkCount }}</span>/<span class="text-danger">{{ factionTaskBadCount }}</span>/{{ factionTaskTotalCount }})</td>
-    <td>刷金: <button class="btn btn-xs" type="button" @click="focusOnGold = !focusOnGold">{{ focusOnGold ? '✔' : '✘' }}</button></td>
-    <td><button class="btn btn-xs" type="button" @click="autoFactionTask = !autoFactionTask">{{ autoFactionTask ? '✔' : '✘' }}</button></td>
+    <td>刷金: <button class="btn btn-default btn-xs" type="button" @click="focusOnGold = !focusOnGold">{{ focusOnGold ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" type="button" @click="autoFactionTask = !autoFactionTask">{{ autoFactionTask ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td>自动制作</td>
     <td>防止活力满</td>
-    <td><button class="btn btn-xs" type="button" @click="autoMakeFood = !autoMakeFood">{{ autoMakeFood ? '✔' : '✘' }}</button></td>
+    <td><button class="btn btn-default btn-xs" type="button" @click="autoMakeFood = !autoMakeFood">{{ autoMakeFood ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td colspan="2">自动加入最近的队伍</td>
-    <td><button class="btn btn-xs" type="button" @click="autoJoinLatestJoinTeam = !autoJoinLatestJoinTeam">{{ autoJoinLatestJoinTeam ? '✔' : '✘' }}</button></td>
+    <td><button class="btn btn-default btn-xs" type="button" @click="autoJoinLatestJoinTeam = !autoJoinLatestJoinTeam">{{ autoJoinLatestJoinTeam ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td>异常提醒</td>
     <td>长时间未战斗</td>
-    <td><button class="btn btn-xs" type="button" @click="longTimeNoBattleNotification = !longTimeNoBattleNotification">{{ longTimeNoBattleNotification ? '✔' : '✘' }}</button></td>
+    <td><button class="btn btn-default btn-xs" type="button" @click="longTimeNoBattleNotification = !longTimeNoBattleNotification">{{ longTimeNoBattleNotification ? 'On' : 'Off' }}</button></td>
 </tr>
 </table>
 <table class="table table-bordered table-condensed">
