@@ -181,8 +181,15 @@ let who_interval = setInterval(function () {
 
     $('.container-fluid > .homediv > div:first-child').append(`
 <div id="who_helper">
-<span><strong>Room</strong>: ${roomIndex}</span><br>
-<span><strong>Me</strong>: ${userId}</span><br>
+<span>
+    <strong>组队大厅</strong>(点击切换): 
+    <button v-for="room in rooms" class="btn btn-xs" 
+        :class="[ room.value === currentRoom ? 'btn-success' : 'btn-default' ]" 
+        style="margin-right: 5px;"
+        @click="changeRoom(room)">
+        {{ room.label }}
+    </button>
+</span><br>
 <span v-show="amIINTeam"><strong>BattleEnd</strong>: {{ teamBattleEndAt.format('HH:mm:ss') }}<br></span>
 <label>
     Battle: <span class="text-success">{{ combat_ok_count }}</span> / <span class="text-danger">{{ combat_bad_count }}</span> / <span>{{ combat_total_count }}</span> / <span class="text-warning">{{ combat_success_rate }}</span>
@@ -192,38 +199,38 @@ let who_interval = setInterval(function () {
 <tr v-show="amICaptain">
     <td>自动战斗</td>
     <td><input type="number" v-model="autoBattleInternalTime" placeholder="间隔" style="width: 50px;">秒</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="autoBattleHandler">{{ autoBattle ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : autoBattle }" type="button" @click="autoBattleHandler">{{ autoBattle ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td colspan="2">isMaster(只能有一个主, 用来任务调度, 控制其他标签小号的帮派任务)</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="isMaster = !isMaster">{{ isMaster ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : isMaster }" type="button" @click="isMaster = !isMaster">{{ isMaster ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td rowspan="3" style="vertical-align: middle;">自动帮派</td>
     <td><span class="text-success">{{ factionTaskOkCount }}</span>/<span class="text-danger">{{ factionTaskBadCount }}</span>/{{ factionTaskTotalCount }}</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="autoFactionTask = !autoFactionTask">{{ autoFactionTask ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : autoFactionTask }" type="button" @click="autoFactionTask = !autoFactionTask">{{ autoFactionTask ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td>刷金</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="focusOnGold = !focusOnGold">{{ focusOnGold ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : focusOnGold }" type="button" @click="focusOnGold = !focusOnGold">{{ focusOnGold ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td>大于5000K自动凝元</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="autoPolyLin = !autoPolyLin">{{ autoPolyLin ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : autoPolyLin }" type="button" @click="autoPolyLin = !autoPolyLin">{{ autoPolyLin ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td>自动制作</td>
     <td>防止活力满</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="autoMakeFood = !autoMakeFood">{{ autoMakeFood ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : autoMakeFood }" type="button" @click="autoMakeFood = !autoMakeFood">{{ autoMakeFood ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td colspan="2">自动加入最近的队伍</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="autoJoinLatestJoinTeam = !autoJoinLatestJoinTeam">{{ autoJoinLatestJoinTeam ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : autoJoinLatestJoinTeam }" type="button" @click="autoJoinLatestJoinTeam = !autoJoinLatestJoinTeam">{{ autoJoinLatestJoinTeam ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td>异常提醒</td>
     <td>长时间未战斗</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="longTimeNoBattleNotification = !longTimeNoBattleNotification">{{ longTimeNoBattleNotification ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : longTimeNoBattleNotification }" type="button" @click="longTimeNoBattleNotification = !longTimeNoBattleNotification">{{ longTimeNoBattleNotification ? 'On' : 'Off' }}</button></td>
 </tr>
 </table>
 <table class="table table-bordered table-condensed">
@@ -290,6 +297,18 @@ let who_interval = setInterval(function () {
                 maxLevel: 89
             },
             teamBattleEndAt: moment(),
+
+            currentRoom: roomIndex,
+            rooms: [
+                {
+                    label: '一',
+                    value: 0,
+                },
+                {
+                    label: '二',
+                    value: 1,
+                }
+            ],
 
             tabId: 0,
 
@@ -376,6 +395,10 @@ let who_interval = setInterval(function () {
             },
             isMaster(n, o) {
                 GM_setValue(getKey('isMaster'), n)
+
+                setTimeout(function () {
+                    unsafeWindow.location.reload()
+                }, 200)
             },
             inTeamPwd(n, o) {
                 GM_setValue(getKey('inTeamPwd'), n)
@@ -427,6 +450,15 @@ let who_interval = setInterval(function () {
                     }, this.autoBattleInternalTime*1000)
                 } else {
                     clearInterval(this.internalIds.autoBattle)
+                }
+            },
+            changeRoom(room) {
+                if (room.value !== this.currentRoom) {
+                    GM_setValue(getKey('roomIndex'), room.value)
+
+                    setTimeout(function () {
+                        unsafeWindow.location.reload()
+                    }, 200)
                 }
             },
             createTeam(autoStart) {

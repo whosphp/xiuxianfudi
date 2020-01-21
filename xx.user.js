@@ -185,8 +185,15 @@ let who_interval = setInterval(function () {
 
     $('.container-fluid > .homediv > div:first-child').append(`
 <div id="who_helper">
-<span><strong>Room</strong>: ${roomIndex}</span><br>
-<span><strong>Me</strong>: ${userId}</span><br>
+<span>
+    <strong>组队大厅</strong>(点击切换): 
+    <button v-for="room in rooms" class="btn btn-xs" 
+        :class="[ room.value === currentRoom ? 'btn-success' : 'btn-default' ]" 
+        style="margin-right: 5px;"
+        @click="changeRoom(room)">
+        {{ room.label }}
+    </button>
+</span><br>
 <span v-show="amIINTeam"><strong>BattleEnd</strong>: {{ teamBattleEndAt.format('HH:mm:ss') }}<br></span>
 <label>
     Battle: <span class="text-success">{{ combat_ok_count }}</span> / <span class="text-danger">{{ combat_bad_count }}</span> / <span>{{ combat_total_count }}</span> / <span class="text-warning">{{ combat_success_rate }}</span>
@@ -295,6 +302,18 @@ let who_interval = setInterval(function () {
             },
             teamBattleEndAt: moment(),
 
+            currentRoom: roomIndex,
+            rooms: [
+                {
+                    label: '一',
+                    value: 0,
+                },
+                {
+                    label: '二',
+                    value: 1,
+                }
+            ],
+
             tabId: 0,
 
             userGoodsPages: 1,// 背包物品总页数
@@ -380,6 +399,10 @@ let who_interval = setInterval(function () {
             },
             isMaster(n, o) {
                 GM_setValue(getKey('isMaster'), n)
+
+                setTimeout(function () {
+                    unsafeWindow.location.reload()
+                }, 200)
             },
             inTeamPwd(n, o) {
                 GM_setValue(getKey('inTeamPwd'), n)
@@ -431,6 +454,15 @@ let who_interval = setInterval(function () {
                     }, this.autoBattleInternalTime*1000)
                 } else {
                     clearInterval(this.internalIds.autoBattle)
+                }
+            },
+            changeRoom(room) {
+                if (room.value !== this.currentRoom) {
+                    GM_setValue(getKey('roomIndex'), room.value)
+
+                    setTimeout(function () {
+                        unsafeWindow.location.reload()
+                    }, 200)
                 }
             },
             createTeam(autoStart) {
