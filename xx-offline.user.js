@@ -5,17 +5,13 @@
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
-// @updateURL    https://raw.githubusercontent.com/whosphp/xiuxianfudi/master/xx.js
-// @downloadURL  https://raw.githubusercontent.com/whosphp/xiuxianfudi/master/xx.js
+// @updateURL    https://raw.githubusercontent.com/whosphp/xiuxianfudi/master/xx-offline.user.js
+// @downloadURL  https://raw.githubusercontent.com/whosphp/xiuxianfudi/master/xx-offline.user.js
 // @grant        GM_xmlhttpRequest
 // @grant        unsafeWindow
 // @grant        GM_notification
 // @grant        GM_setValue
 // @grant        GM_getValue
-// @grant        GM_getTab
-// @grant        GM_saveTab
-// @grant        GM_getTabs
-// @grant        GM_addValueChangeListener
 // @require      https://cdn.jsdelivr.net/npm/vue/dist/vue.js
 // @require      https://cdn.jsdelivr.net/npm/later@1.2.0/later.min.js
 // @run-at document-end
@@ -35,7 +31,7 @@ let who_interval = setInterval(function () {
         return;
     }
 
-    let online = true // 是否依赖 xx.gl.test
+    let online = false // 是否依赖 xx.gl.test
     var host = 'http://xx.gl.test'
 
     if (online) {
