@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.7.2
+// @version      0.7.4
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
