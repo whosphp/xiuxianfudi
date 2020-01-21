@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.7.4
+// @version      0.7.5
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -704,6 +704,28 @@ let who_interval = setInterval(function () {
             }, i*seconds*1000)
         }
     }
+
+    function setIntervalXOrSuccess(callback, delay, repetitions) {
+        let x = 0;
+        let intervalID = setInterval(function () {
+
+            let isSuccessful = callback();
+
+            if (++x === repetitions || isSuccessful === true) {
+                clearInterval(intervalID);
+            }
+        }, delay);
+    }
+
+    setIntervalXOrSuccess(function () {
+        let title = $('#header-nickname').text()
+        if (title) {
+            document.title = title
+            return true
+        } else {
+            return false
+        }
+    }, 1500, 15)
 
     // 吃红药水
     function useGoodsToUser(id) {
