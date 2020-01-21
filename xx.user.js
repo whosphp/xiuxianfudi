@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.7.2
+// @version      0.7.3
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -196,38 +196,38 @@ let who_interval = setInterval(function () {
 <tr v-show="amICaptain">
     <td>自动战斗</td>
     <td><input type="number" v-model="autoBattleInternalTime" placeholder="间隔" style="width: 50px;">秒</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="autoBattleHandler">{{ autoBattle ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : autoBattle }" type="button" @click="autoBattleHandler">{{ autoBattle ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td colspan="2">isMaster(只能有一个主, 用来任务调度, 控制其他标签小号的帮派任务)</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="isMaster = !isMaster">{{ isMaster ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : isMaster }" type="button" @click="isMaster = !isMaster">{{ isMaster ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td rowspan="3" style="vertical-align: middle;">自动帮派</td>
     <td><span class="text-success">{{ factionTaskOkCount }}</span>/<span class="text-danger">{{ factionTaskBadCount }}</span>/{{ factionTaskTotalCount }}</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="autoFactionTask = !autoFactionTask">{{ autoFactionTask ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : autoFactionTask }" type="button" @click="autoFactionTask = !autoFactionTask">{{ autoFactionTask ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td>刷金</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="focusOnGold = !focusOnGold">{{ focusOnGold ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : focusOnGold }" type="button" @click="focusOnGold = !focusOnGold">{{ focusOnGold ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td>大于5000K自动凝元</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="autoPolyLin = !autoPolyLin">{{ autoPolyLin ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : autoPolyLin }" type="button" @click="autoPolyLin = !autoPolyLin">{{ autoPolyLin ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td>自动制作</td>
     <td>防止活力满</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="autoMakeFood = !autoMakeFood">{{ autoMakeFood ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : autoMakeFood }" type="button" @click="autoMakeFood = !autoMakeFood">{{ autoMakeFood ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td colspan="2">自动加入最近的队伍</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="autoJoinLatestJoinTeam = !autoJoinLatestJoinTeam">{{ autoJoinLatestJoinTeam ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : autoJoinLatestJoinTeam }" type="button" @click="autoJoinLatestJoinTeam = !autoJoinLatestJoinTeam">{{ autoJoinLatestJoinTeam ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td>异常提醒</td>
     <td>长时间未战斗</td>
-    <td><button class="btn btn-default btn-xs" type="button" @click="longTimeNoBattleNotification = !longTimeNoBattleNotification">{{ longTimeNoBattleNotification ? 'On' : 'Off' }}</button></td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : longTimeNoBattleNotification }" type="button" @click="longTimeNoBattleNotification = !longTimeNoBattleNotification">{{ longTimeNoBattleNotification ? 'On' : 'Off' }}</button></td>
 </tr>
 </table>
 <table class="table table-bordered table-condensed">
