@@ -754,7 +754,7 @@ let who_interval = setInterval(function () {
                     }
                 }
             })
-        }, 5000)
+        }, 60000)
     }
 
     // 五分钟检查一次帮派任务
