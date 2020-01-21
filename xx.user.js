@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.7.1
+// @version      0.7.2
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -556,17 +556,19 @@ let who_interval = setInterval(function () {
         }
 
         if (settings.url.startsWith("/api/getFationTask")) {
+            if (who_app.autoFactionTask) {
+                who_app.latestGotFactionTaskAt = moment()
+            }
+
             if (res.code != 200) {
                 if (res.msg === '少侠，请先完成当前任务再来领取~') {
                     if (who_app.autoFactionTask) {
-                        who_app.latestGotFactionTaskAt = moment()
                         setTimeout(function () {
                             getUserTaskFunc()
                         }, 1000)
                     }
                 } else if (res.msg === '少侠，当日已领取100个任务~') {
                     if (who_app.autoFactionTask) {
-                        who_app.latestGotFactionTaskAt = moment()
                         GM_setValue(who_app.tabId + ':taskStatus', 'complete')
                     }
                 }
