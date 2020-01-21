@@ -65,6 +65,9 @@ let who_interval = setInterval(function () {
             if (socket === undefined || !socket) {
                 old(index)
             } else if (socket.connected) {
+                // socket 连接成功之后先离开队伍
+                leaveTeamFunc()
+
                 socket.off('disconnect')
                 socket.on('disconnect', function () {
                     who_notify('disconnect', 1)
