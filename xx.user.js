@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.7.6
+// @version      0.7.7
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -642,12 +642,14 @@ let who_interval = setInterval(function () {
 
         if (settings.url.startsWith("/api/payUserTask")) {
             if (res.code == 200) {
-                who_app.factionTaskOkCount++
-                if (who_app.autoFactionTask) {
-                    GM_setValue(who_app.tabId + ':taskStatus', 'running')
-                    setTimeout(function () {
-                        getFationTaskFunc()
-                    }, 1000)
+                if (res.data.task_type === 4) {
+                    who_app.factionTaskOkCount++
+                    if (who_app.autoFactionTask) {
+                        GM_setValue(who_app.tabId + ':taskStatus', 'running')
+                        setTimeout(function () {
+                            getFationTaskFunc()
+                        }, 1000)
+                    }
                 }
             } else {
                 who_notify(res.msg)
