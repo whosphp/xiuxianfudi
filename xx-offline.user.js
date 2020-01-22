@@ -16,6 +16,10 @@
 // @require      https://cdn.jsdelivr.net/npm/later@1.2.0/later.min.js
 // @run-at document-end
 // ==/UserScript==
+
+// 是否依赖 xx.gl.test
+let who_online = false
+
 let who_interval = setInterval(function () {
     'use strict';
 
@@ -38,22 +42,7 @@ let who_interval = setInterval(function () {
         return undefined
     }
 
-    let online = false // 是否依赖 xx.gl.test
-    var host = 'http://xx.gl.test'
-
-    if (online) {
-        // // 轮询
-        // setInterval(function () {
-        //     GM_xmlhttpRequest({
-        //         method: "GET",
-        //         headers: {"Accept": "application/json"},
-        //         url: host + '/api/events?uuid=' + userId,
-        //         onload: function (res) {
-        //             let events = JSON.parse(res.responseText)
-        //         }
-        //     })
-        // }, 3000)
-    }
+    let host = 'http://xx.gl.test'
 
     console.log(userId, currentLevel)
     clearInterval(who_interval)
@@ -508,7 +497,7 @@ let who_interval = setInterval(function () {
     }
 
     function send_to_local(data) {
-        if (online) {
+        if (who_online) {
             let a = new FormData();
             a.append('data', JSON.stringify(data))
 
@@ -523,7 +512,7 @@ let who_interval = setInterval(function () {
     }
 
     function who_notify(msg, bark) {
-        if (online) {
+        if (who_online) {
             let url = host + "/notify?msg=" + who_app.userBaseInfo.nickname + ':' + msg
 
             if (bark) {
@@ -705,6 +694,28 @@ let who_interval = setInterval(function () {
         }
     }
 
+    function setIntervalXOrSuccess(callback, delay, repetitions) {
+        let x = 0;
+        let intervalID = setInterval(function () {
+
+            let isSuccessful = callback();
+
+            if (++x === repetitions || isSuccessful === true) {
+                clearInterval(intervalID);
+            }
+        }, delay);
+    }
+
+    setIntervalXOrSuccess(function () {
+        let title = $('#header-nickname').text()
+        if (title) {
+            document.title = title
+            return true
+        } else {
+            return false
+        }
+    }, 1500, 15)
+
     // 吃红药水
     function useGoodsToUser(id) {
         fetch("http://joucks.cn:3344/api/useGoodsToUser", {
@@ -763,6 +774,13 @@ let who_interval = setInterval(function () {
 
                     GM_addValueChangeListener(i + ':taskStatus', function (name, old_value, new_value, remote) {
                         tab.task.status = new_value
+
+                        document.title = $('#header-nickname').text() + ':' + new_value
+
+                        if (new_value === 'undone') {
+                            tab.task.at = new Date().getTime()
+                        }
+
                         GM_saveTab(tab)
                     })
                 }
@@ -771,29 +789,53 @@ let who_interval = setInterval(function () {
     })
 
     if (who_app.isMaster) {
-        // Master 初始化
+        // Init Master
         setInterval(function () {
             GM_getTabs(function (tabs) {
-                let isThereTabRunning = Object.values(tabs).find(function (tab) {
-                    if (tab.hasOwnProperty('task') && tab.task.status === 'running') {
-                        return true
-                    } else {
-                        return false
-                    }
-                })
+                let running = []
+                let pendingOrUndone = []
 
-                if (! isThereTabRunning) {
-                    let p = ['pending', 'undone']
-                    for (let index = 0; index < p.length; index++) {
-                        for (let i in tabs) {
-                            let tab = tabs[i]
-                            if (tab.hasOwnProperty('task') && tab.task.status === p[index]) {
-                                GM_setValue(i + ':taskStatus', 'running')
-                                return
-                            }
+                for (let i in tabs) {
+                    let tab = tabs[i]
+
+                    if (tab.hasOwnProperty('task')) {
+                        if (tab.task.status === 'running') {
+                            tab.tabId = i
+                            running.push(tab)
+                        }
+
+                        if (['pending', 'undone'].includes(tab.task.status)) {
+                            tab.tabId = i
+                            pendingOrUndone.push(tab)
                         }
                     }
                 }
+
+                if (running.length > 0) {
+                    return
+                }
+
+                if (pendingOrUndone.length === 0) {
+                    return
+                }
+
+                pendingOrUndone.sort(function (x, y) {
+                    if (x.task.status === 'pending') {
+                        return -1
+                    }
+
+                    if (y.task.status === 'pending') {
+                        return 1
+                    }
+
+                    if (x.task.hasOwnProperty('at') && y.task.hasOwnProperty('at')) {
+                        return x.task.at - y.task.at
+                    }
+
+                    return -1
+                })
+
+                GM_setValue(pendingOrUndone[0].tabId + ':taskStatus', 'running')
             })
         }, 60000)
     }
@@ -816,7 +858,7 @@ let who_interval = setInterval(function () {
 
     // 每天9点3分 初始化任务状态
     later.setInterval(function () {
-        GM_setValue(i + ':taskStatus', 'pending')
+        GM_setValue(who_app.tabId + ':taskStatus', 'pending')
     }, later.parse.cron('3 9 * * *'))
 
     setInterval(function () {
