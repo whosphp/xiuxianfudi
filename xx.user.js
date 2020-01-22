@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.7.8
+// @version      0.7.9
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -484,13 +484,13 @@ let who_interval = setInterval(function () {
                     let currentLevel = getCurrentLevel()
                     let scenesId = ''
                     if (currentLevel > 80) {
-                        // 死亡绝谷
+                        // 黑暗绝谷
                         scenesId = "5dd203c721805f72bbefce75"
                     } else if (currentLevel > 75) {
-                        // 坠炎之地
+                        // 堕炎之地
                         scenesId = "5dd204c661f77e72cbd4c15f"
                     } else if (currentLevel > 70) {
-                        // 死亡绝谷
+                        // 死亡平原
                         scenesId = "5dce800ba235b557b40a871d"
                     }
 
