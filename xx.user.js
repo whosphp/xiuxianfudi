@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.7.7
+// @version      0.7.8
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -27,8 +27,12 @@ let who_online = true
 let who_interval = setInterval(function () {
     'use strict';
 
+    function getCurrentLevel() {
+        return parseInt($('#current-level').text())
+    }
+
     let userId = $('#userId').val()
-    let currentLevel = parseInt($('#current-level').text())
+    let currentLevel = getCurrentLevel()
     if (!userId) {
         console.log('Can not find user id')
         return;
@@ -39,6 +43,7 @@ let who_interval = setInterval(function () {
         return;
     }
 
+    later.date.localTime()
     unsafeWindow.onbeforeunload = function () {
         // 刷新前离开队伍
         leaveTeamFunc()
@@ -175,9 +180,9 @@ let who_interval = setInterval(function () {
     $('.container-fluid > .homediv > div:first-child').append(`
 <div id="who_helper">
 <span>
-    <strong>组队大厅</strong>(点击切换): 
-    <button v-for="room in rooms" class="btn btn-xs" 
-        :class="[ room.value === currentRoom ? 'btn-success' : 'btn-default' ]" 
+    <strong>组队大厅</strong>(点击切换):
+    <button v-for="room in rooms" class="btn btn-xs"
+        :class="[ room.value === currentRoom ? 'btn-success' : 'btn-default' ]"
         style="margin-right: 5px;"
         @click="changeRoom(room)">
         {{ room.label }}
@@ -193,6 +198,23 @@ let who_interval = setInterval(function () {
     <td>自动战斗</td>
     <td><input type="number" v-model="autoBattleInternalTime" placeholder="间隔" style="width: 50px;">秒</td>
     <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : autoBattle }" type="button" @click="autoBattleHandler">{{ autoBattle ? 'On' : 'Off' }}</button></td>
+</tr>
+<tr>
+    <td rowspan="4" style="vertical-align: middle;">自动副本<br/>(队长有效)</td>
+    <td>总开关</td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : autoFb }" type="button" @click="autoFb = !autoFb">{{ autoFb ? 'On' : 'Off' }}</button></td>
+</tr>
+<tr>
+    <td>云顶封神塔(09:06)</td>
+    <td>On</td>
+</tr>
+<tr>
+    <td>升级(11:06)</td>
+    <td>On</td>
+</tr>
+<tr>
+    <td>荒漠深渊(00:01)</td>
+    <td><button class="btn btn-default btn-xs" :class="{ 'btn-success' : autoFb }" type="button" @click="schedule.autoShenYuan.enabled = !schedule.autoShenYuan.enabled">{{ schedule.autoShenYuan.enabled ? 'On' : 'Off' }}</button></td>
 </tr>
 <tr>
     <td colspan="2">isMaster(只能有一个主, 用来任务调度, 控制其他标签小号的帮派任务)</td>
@@ -256,6 +278,7 @@ let who_interval = setInterval(function () {
 
             autoBattle: false,
             autoBattleInternalTime: GM_getValue(getKey('autoBattleInternalTime'), 5),
+            autoFb: GM_getValue(getKey('autoFb'), false),
 
             latestGotFactionTaskAt: '',
             autoFactionTask: GM_getValue(getKey('autoFactionTask'), false),
@@ -290,6 +313,13 @@ let who_interval = setInterval(function () {
                 maxLevel: 89
             },
             teamBattleEndAt: moment(),
+
+            schedule: {
+                autoShenYuan: {
+                    enabled: GM_getValue(getKey('schedule.autoShenYuan.enabled'), false),
+                    instance: null
+                }
+            },
 
             currentRoom: roomIndex,
             rooms: [
@@ -361,6 +391,117 @@ let who_interval = setInterval(function () {
                     }
                 }
             }, 60000)
+
+            if (this.isMaster) {
+                // Init Master
+                setInterval(function () {
+                    GM_getTabs(function (tabs) {
+                        let running = []
+                        let pendingOrUndone = []
+
+                        for (let i in tabs) {
+                            let tab = tabs[i]
+
+                            if (tab.hasOwnProperty('task')) {
+                                if (tab.task.status === 'running') {
+                                    tab.tabId = i
+                                    running.push(tab)
+                                }
+
+                                if (['pending', 'undone'].includes(tab.task.status)) {
+                                    tab.tabId = i
+                                    pendingOrUndone.push(tab)
+                                }
+                            }
+                        }
+
+                        if (running.length > 0) {
+                            return
+                        }
+
+                        if (pendingOrUndone.length === 0) {
+                            return
+                        }
+
+                        pendingOrUndone.sort(function (x, y) {
+                            if (x.task.status === 'pending') {
+                                return -1
+                            }
+
+                            if (y.task.status === 'pending') {
+                                return 1
+                            }
+
+                            if (x.task.hasOwnProperty('at') && y.task.hasOwnProperty('at')) {
+                                return x.task.at - y.task.at
+                            }
+
+                            return -1
+                        })
+
+                        GM_setValue(pendingOrUndone[0].tabId + ':taskStatus', 'running')
+                    })
+                }, 60000)
+            }
+
+            // 五分钟检查一次帮派任务
+            later.setInterval(function () {
+                if (! who_app.autoFactionTask) {
+                    return
+                }
+
+                GM_getTab(function (tab) {
+                    if (tab.task.status === 'running') {
+                        if (who_app.latestGotFactionTaskAt === '' || moment().diff(who_app.latestGotFactionTaskAt, 'seconds') >= 60) {
+                            // 防止重复执行
+                            getFationTaskFunc()
+                        }
+                    }
+                })
+            }, later.parse.text('every 5 mins'))
+
+            // 每天9点3分 初始化任务状态
+            later.setInterval(function () {
+                GM_setValue(who_app.tabId + ':taskStatus', 'pending')
+            }, later.parse.text('at 09:03 am'))
+
+            // 9:06 爬塔 11:06 切换至平原
+            if (this.autoFb) {
+                console.log('auto fb loaded')
+                later.setInterval(function () {
+                    console.log('爬塔中...')
+                    leaveTeamFunc()
+                    setTimeout(function () {
+                        sendToServerBase("createdTeam", {
+                            teamScenesId: "5dfed126016232536617c5e0",
+                            level: [0, 300],
+                            pwd: "651"
+                        })
+                    }, 2000)
+                }, later.parse.text('at 09:06 am'))
+
+                later.setInterval(function () {
+                    let currentLevel = getCurrentLevel()
+                    let scenesId = ''
+                    if (currentLevel > 80) {
+                        // 死亡绝谷
+                        scenesId = "5dd203c721805f72bbefce75"
+                    } else if (currentLevel > 75) {
+                        // 坠炎之地
+                        scenesId = "5dd204c661f77e72cbd4c15f"
+                    } else if (currentLevel > 70) {
+                        // 死亡绝谷
+                        scenesId = "5dce800ba235b557b40a871d"
+                    }
+
+                    console.log('副本升级中...')
+                    sendToServerBase('updateTeamScenes', { scenesId });
+                }, later.parse.text('at 11:06 am'))
+
+                if (this.schedule.autoShenYuan.enabled) {
+                    this.createAutoShenYuanSchedule()
+                }
+            }
         },
         computed: {
             factionTasksWanted() {
@@ -373,6 +514,23 @@ let who_interval = setInterval(function () {
             },
             autoFactionTask(n, o) {
                 GM_setValue(getKey('autoFactionTask'), n)
+            },
+            autoFb(n, o) {
+                GM_setValue(getKey('autoFb'), n)
+
+                setTimeout(function () {
+                    unsafeWindow.location.reload()
+                }, 200)
+            },
+            'schedule.autoShenYuan.enabled': function(n, o) {
+                GM_setValue(getKey('schedule.autoShenYuan.enabled'), n)
+
+                if (n === true) {
+                    this.createAutoShenYuanSchedule()
+                } else {
+                    this.schedule.autoShenYuan.instance.clear()
+                    this.schedule.autoShenYuan.instance = null
+                }
             },
             autoPolyLin(n, o) {
                 GM_setValue(getKey('autoPolyLin'), n)
@@ -453,6 +611,14 @@ let who_interval = setInterval(function () {
                         unsafeWindow.location.reload()
                     }, 200)
                 }
+            },
+            createAutoShenYuanSchedule() {
+                console.log('auto shenyuan loaded')
+                this.schedule.autoShenYuan.instance = later.setInterval(function () {
+                    let scenesId = '5dc2206202642143f1c1ff3b'
+                    console.log('深渊刷军备中...')
+                    sendToServerBase('updateTeamScenes', { scenesId });
+                }, later.parse.text('at 00:01 am'))
             },
             createTeam(autoStart) {
                 let scene = this.fbOptions.find(item => item._id === this.fb)
@@ -791,79 +957,6 @@ let who_interval = setInterval(function () {
             }
         });
     })
-
-    if (who_app.isMaster) {
-        // Init Master
-        setInterval(function () {
-            GM_getTabs(function (tabs) {
-                let running = []
-                let pendingOrUndone = []
-
-                for (let i in tabs) {
-                    let tab = tabs[i]
-
-                    if (tab.hasOwnProperty('task')) {
-                        if (tab.task.status === 'running') {
-                            tab.tabId = i
-                            running.push(tab)
-                        }
-
-                        if (['pending', 'undone'].includes(tab.task.status)) {
-                            tab.tabId = i
-                            pendingOrUndone.push(tab)
-                        }
-                    }
-                }
-
-                if (running.length > 0) {
-                    return
-                }
-
-                if (pendingOrUndone.length === 0) {
-                    return
-                }
-
-                pendingOrUndone.sort(function (x, y) {
-                    if (x.task.status === 'pending') {
-                        return -1
-                    }
-
-                    if (y.task.status === 'pending') {
-                        return 1
-                    }
-
-                    if (x.task.hasOwnProperty('at') && y.task.hasOwnProperty('at')) {
-                        return x.task.at - y.task.at
-                    }
-
-                    return -1
-                })
-
-                GM_setValue(pendingOrUndone[0].tabId + ':taskStatus', 'running')
-            })
-        }, 60000)
-    }
-
-    // 五分钟检查一次帮派任务
-    later.setInterval(function () {
-        if (! who_app.autoFactionTask) {
-            return
-        }
-
-        GM_getTab(function (tab) {
-            if (tab.task.status === 'running') {
-                if (who_app.latestGotFactionTaskAt === '' || moment().diff(who_app.latestGotFactionTaskAt, 'seconds') >= 60) {
-                    // 防止重复执行
-                    getFationTaskFunc()
-                }
-            }
-        })
-    }, later.parse.cron('5/* * * * *'))
-
-    // 每天9点3分 初始化任务状态
-    later.setInterval(function () {
-        GM_setValue(who_app.tabId + ':taskStatus', 'pending')
-    }, later.parse.cron('3 9 * * *'))
 
     setInterval(function () {
         getUserInfoFunc()
