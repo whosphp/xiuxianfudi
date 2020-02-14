@@ -12,6 +12,10 @@
 // @grant        GM_notification
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @grant        GM_getTab
+// @grant        GM_saveTab
+// @grant        GM_getTabs
+// @grant        GM_addValueChangeListener
 // @require      https://cdn.jsdelivr.net/npm/vue/dist/vue.js
 // @require      https://cdn.jsdelivr.net/npm/later@1.2.0/later.min.js
 // @run-at document-end
