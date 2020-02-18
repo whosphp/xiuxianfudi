@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         修仙福地
 // @namespace    http://tampermonkey.net/
-// @version      0.7.9
+// @version      0.7.10-dev
 // @description  try to take over the world!
 // @author       You
 // @match        http://joucks.cn:3344/
@@ -461,8 +461,8 @@ let who_interval = setInterval(function () {
             }, later.parse.text('every 5 mins'))
 
             // 每天9点3分 初始化任务状态
-            later.setInterval(function () {
-                GM_setValue(who_app.tabId + ':taskStatus', 'pending')
+            later.setInterval(_ => {
+                GM_setValue(who_app.tabId + ':taskStatus', this.autoFactionTaskStatus)
             }, later.parse.text('at 09:03 am'))
 
             // 9:06 爬塔 11:06 切换至平原
@@ -506,6 +506,9 @@ let who_interval = setInterval(function () {
         computed: {
             factionTasksWanted() {
                 return this.focusOnGold ? this.factionTasks.gold : this.factionTasks.balance
+            },
+            autoFactionTaskStatus() {
+                return this.autoFactionTask ? 'pending' : 'skip'
             }
         },
         watch: {
@@ -514,6 +517,12 @@ let who_interval = setInterval(function () {
             },
             autoFactionTask(n, o) {
                 GM_setValue(getKey('autoFactionTask'), n)
+
+                if (n) {
+                    GM_setValue(this.tabId + ':taskStatus', 'pending')
+                } else {
+                    GM_setValue(this.tabId + ':taskStatus', 'skip')
+                }
             },
             autoFb(n, o) {
                 GM_setValue(getKey('autoFb'), n)
@@ -879,7 +888,7 @@ let who_interval = setInterval(function () {
     setIntervalXOrSuccess(function () {
         let title = $('#header-nickname').text()
         if (title) {
-            document.title = title
+            document.title = title + ':' + who_app.autoFactionTaskStatus
             return true
         } else {
             return false
@@ -932,7 +941,7 @@ let who_interval = setInterval(function () {
     GM_getTab(function (tab) {
         tab.rand = Math.random();
         tab.task = {
-            status: 'pending' // running done undone pending
+            status: who_app.autoFactionTaskStatus  // running done undone pending skip
         }
         GM_saveTab(tab)
 
