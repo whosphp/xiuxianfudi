@@ -31,7 +31,7 @@
                     "mode":"cors"
                 });
             }
-            oldSetInternal(function() {
+            return oldSetInternal(function() {
                 let eleId = '#goods' + userCache._id
                 var num = parseInt($(eleId).text())
                 $(eleId).text(num + 1)
@@ -43,7 +43,7 @@
                 }
             }, time)
         } else {
-            oldSetInternal(callback, time)
+            return oldSetInternal(callback, time)
         }
     }
 })();
