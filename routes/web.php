@@ -16,4 +16,4 @@ Route::get('/', function () {
 });
 
 Route::get('goods', 'GoodsController@index');
-Route::get('/notify', 'NotifyController@index');
+Route::any('/notify', 'NotifyController@index');
